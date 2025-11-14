@@ -1,3 +1,11 @@
+FROM golang:1.21-alpine AS dns-builder
+
+# Build dns-reverse-proxy binary with modern Go
+RUN apk add --no-cache git
+RUN git clone https://github.com/ness-network/dns-reverse-proxy.git /tmp/dns-proxy \
+    && cd /tmp/dns-proxy \
+    && go build -o /out/dns-reverse-proxy .
+
 FROM debian:bullseye-slim AS base
 
 ARG TARGETPLATFORM
@@ -8,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     git \
     build-essential \
-    golang-go \
     python3 \
     python3-pip \
     openjdk-17-jre-headless \
@@ -16,23 +23,26 @@ RUN apt-get update && apt-get install -y \
     iptables \
     make \
     tar \
+    xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
 # Build Emercoin
 ENV EMERCOIN_VERSION=0.8.5
+ENV EMERCOIN_TAG=v0.8.5emc
 RUN ARCH=$(dpkg --print-architecture) && \
     case ${ARCH} in \
         amd64) EMERCOIN_ARCH="x86_64-linux-gnu" ;; \
-        arm64) EMERCOIN_ARCH="aarch64-linux-gnu" ;; \
-        armhf) EMERCOIN_ARCH="arm-linux-gnueabihf" ;; \
-        *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
+        *) echo "Unsupported architecture for prebuilt Emercoin release: ${ARCH}" && exit 1 ;; \
     esac && \
-    wget https://github.com/emercoin/emercoin/releases/download/v${EMERCOIN_VERSION}/emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}.tar.gz \
-    && tar -xzf emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}.tar.gz \
-    && mv emercoin-${EMERCOIN_VERSION}/bin/* /usr/local/bin/ \
-    && rm -rf emercoin-*
+    ARCHIVE_NAME="emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}.tar.xz" && \
+    wget https://github.com/emercoin/emercoin/releases/download/${EMERCOIN_TAG}/${ARCHIVE_NAME} \
+    && tar -xJf ${ARCHIVE_NAME} \
+    && mv emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}/emercoind /usr/local/bin/ \
+    && mv emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}/emercoin-qt /usr/local/bin/ \
+    && mv emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}/emercoin-cli /usr/local/bin/ \
+    && rm -rf emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH} ${ARCHIVE_NAME}
 
 ENV YGGDRASIL_VERSION=0.5.12
 
@@ -60,11 +70,8 @@ RUN set -e; \
     cp /opt/skywire/* /usr/local/bin/; \
     rm -rf /tmp/skywire.tar.gz /opt/skywire
 
-# Build DNS Reverse Proxy
-RUN git clone https://github.com/ness-network/dns-reverse-proxy.git /tmp/dns-proxy \
-    && cd /tmp/dns-proxy \
-    && go build -o /usr/local/bin/dns-reverse-proxy . \
-    && cd / && rm -rf /tmp/dns-proxy
+# Install DNS Reverse Proxy binary built in dns-builder stage
+COPY --from=dns-builder /out/dns-reverse-proxy /usr/local/bin/dns-reverse-proxy
 
 # Install I2P
 ENV I2P_VERSION=2.4.0
