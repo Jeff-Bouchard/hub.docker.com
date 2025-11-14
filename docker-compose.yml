@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  emercoin-core:
+    image: ness-network/emercoin-core
+    container_name: emercoin-core
+    ports:
+      - "6661:6661"
+      - "6662:6662"
+      - "8775:8775"
+    volumes:
+      - emercoin-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "emercoin-cli", "-datadir=/data", "getinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  yggdrasil:
+    image: ness-network/yggdrasil
+    container_name: yggdrasil
+    ports:
+      - "9001:9001"
+    volumes:
+      - yggdrasil-data:/etc/yggdrasil
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      emercoin-core:
+        condition: service_healthy
+
+  dns-reverse-proxy:
+    image: ness-network/dns-reverse-proxy
+    container_name: dns-reverse-proxy
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "8053:8053"
+    restart: unless-stopped
+    depends_on:
+      - emercoin-core
+      - yggdrasil
+
+  i2p-yggdrasil:
+    image: ness-network/i2p-yggdrasil
+    container_name: i2p-yggdrasil
+    ports:
+      - "7657:7657"
+      - "4444:4444"
+      - "6668:6668"
+      - "9002:9002"
+    volumes:
+      - i2p-data:/var/lib/i2p
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun
+    sysctls:
+      - net.ipv6.conf.all.forwarding=1
+    depends_on:
+      - yggdrasil
+
+  skywire:
+    image: ness-network/skywire
+    container_name: skywire
+    ports:
+      - "8000:8000"
+    volumes:
+      - skywire-data:/root/.skywire
+    restart: unless-stopped
+    depends_on:
+      emercoin-core:
+        condition: service_healthy
+
+  amneziawg:
+    image: ness-network/amneziawg
+    container_name: amneziawg
+    ports:
+      - "51820:51820/udp"
+    volumes:
+      - awg-config:/etc/amneziawg
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+
+  skywire-amneziawg:
+    image: ness-network/skywire-amneziawg
+    container_name: skywire-amneziawg
+    ports:
+      - "8001:8000"
+      - "51821:51820/udp"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun
+    sysctls:
+      - net.ipv4.ip_forward=1
+    depends_on:
+      - emercoin-core
+
+  privateness:
+    image: ness-network/privateness
+    container_name: privateness
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - emercoin-core
+      - yggdrasil
+      - dns-reverse-proxy
+
+  pyuheprng:
+    image: ness-network/pyuheprng
+    container_name: pyuheprng
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    depends_on:
+      emercoin-core:
+        condition: service_healthy
+
+  privatenumer:
+    image: ness-network/privatenumer
+    container_name: privatenumer
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - pyuheprng
+
+  privatenesstools:
+    image: ness-network/privatenesstools
+    container_name: privatenesstools
+    ports:
+      - "8888:8888"
+    restart: unless-stopped
+    depends_on:
+      - privateness
+      - emercoin-core
+
+volumes:
+  emercoin-data:
+  yggdrasil-data:
+  i2p-data:
+  skywire-data:
+  awg-config:
+
+networks:
+  default:
+    name: ness-network
+    driver: bridge

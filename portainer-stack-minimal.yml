@@ -1,0 +1,59 @@
+version: '3.8'
+
+# Minimal Portainer Stack - Core Services Only
+# For resource-constrained environments
+
+services:
+  emercoin-core:
+    image: ness-network/emercoin-core:latest
+    container_name: emercoin-core
+    ports:
+      - "6661:6661"
+      - "6662:6662"
+      - "8775:8775"
+    volumes:
+      - emercoin-data:/data
+    restart: unless-stopped
+    labels:
+      - "io.portainer.accesscontrol.teams=privateness"
+      - "com.privateness.service=blockchain"
+      - "com.privateness.stack=minimal"
+
+  yggdrasil:
+    image: ness-network/yggdrasil:latest
+    container_name: yggdrasil
+    ports:
+      - "9001:9001"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    labels:
+      - "io.portainer.accesscontrol.teams=privateness"
+      - "com.privateness.service=mesh"
+      - "com.privateness.stack=minimal"
+    depends_on:
+      - emercoin-core
+
+  privateness:
+    image: ness-network/privateness:latest
+    container_name: privateness
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    labels:
+      - "io.portainer.accesscontrol.teams=privateness"
+      - "com.privateness.service=core"
+      - "com.privateness.stack=minimal"
+    depends_on:
+      - emercoin-core
+      - yggdrasil
+
+volumes:
+  emercoin-data:
+    labels:
+      - "com.privateness.volume=blockchain"
+
+networks:
+  default:
+    name: ness-network-minimal
+    driver: bridge

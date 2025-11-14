@@ -1,0 +1,43 @@
+version: '3.8'
+
+# Minimal stack - just core services
+services:
+  emercoin-core:
+    image: ness-network/emercoin-core
+    container_name: emercoin-core
+    ports:
+      - "6661:6661"
+      - "6662:6662"
+      - "8775:8775"
+    volumes:
+      - emercoin-data:/data
+    restart: unless-stopped
+
+  yggdrasil:
+    image: ness-network/yggdrasil
+    container_name: yggdrasil
+    ports:
+      - "9001:9001"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - emercoin-core
+
+  privateness:
+    image: ness-network/privateness
+    container_name: privateness
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - emercoin-core
+      - yggdrasil
+
+volumes:
+  emercoin-data:
+
+networks:
+  default:
+    name: ness-network
+    driver: bridge
