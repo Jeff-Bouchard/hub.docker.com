@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     git \
     build-essential \
+    golang-go \
     python3 \
     python3-pip \
     openjdk-17-jre-headless \
@@ -24,7 +25,11 @@ RUN apt-get update && apt-get install -y \
     make \
     tar \
     xz-utils \
+    i2pd \
     && rm -rf /var/lib/apt/lists/*
+
+ENV GOPATH=/root/go
+ENV PATH=$PATH:$GOPATH/bin
 
 WORKDIR /build
 
@@ -52,7 +57,7 @@ RUN set -e; \
     tar -xzf /tmp/yggdrasil.tar.gz -C /usr/local/bin; \
     rm /tmp/yggdrasil.tar.gz
 
-# Install Skywire from prebuilt v1.3.31 release tarball
+# Install Skywire from prebuilt v1.3.31 release tarball (also keep source under GOPATH)
 ENV SKYWIRE_VERSION=1.3.31
 RUN set -e; \
     ARCH=$(dpkg --print-architecture); \
@@ -64,6 +69,9 @@ RUN set -e; \
         i386)   SKYWIRE_ARCH="linux-386" ;; \
         *) echo "Unsupported architecture for Skywire: ${ARCH}" && exit 1 ;; \
     esac; \
+    mkdir -p ${GOPATH}/src/github.com/skycoin \
+    && git clone https://github.com/skycoin/skywire.git ${GOPATH}/src/github.com/skycoin/skywire \
+    && cd ${GOPATH}/src/github.com/skycoin/skywire && go mod download && cd /build; \
     wget -O /tmp/skywire.tar.gz "https://github.com/skycoin/skywire/releases/download/v${SKYWIRE_VERSION}/skywire-v${SKYWIRE_VERSION}-${SKYWIRE_ARCH}.tar.gz"; \
     mkdir -p /opt/skywire; \
     tar -xzf /tmp/skywire.tar.gz -C /opt/skywire; \
@@ -73,28 +81,18 @@ RUN set -e; \
 # Install DNS Reverse Proxy binary built in dns-builder stage
 COPY --from=dns-builder /out/dns-reverse-proxy /usr/local/bin/dns-reverse-proxy
 
-# Install I2P
-ENV I2P_VERSION=2.4.0
-RUN wget https://github.com/i2p/i2p.i2p/releases/download/i2p-${I2P_VERSION}/i2p-install_${I2P_VERSION}_all.deb \
-    && dpkg -i i2p-install_${I2P_VERSION}_all.deb || apt-get install -f -y \
-    && rm i2p-install_${I2P_VERSION}_all.deb
+# Install Ness-network repositories into GOPATH
+RUN mkdir -p ${GOPATH}/src/github.com/ness-network \
+    && git clone https://github.com/ness-network/ness.git ${GOPATH}/src/github.com/ness-network/ness
 
-# Install Python services
-RUN git clone https://github.com/ness-network/ness.git /opt/privateness \
-    && cd /opt/privateness \
-    && pip3 install --no-cache-dir -r requirements.txt
+RUN mkdir -p ${GOPATH}/src/github.com/ness-network \
+    && git clone https://github.com/ness-network/pyuheprng.git ${GOPATH}/src/github.com/ness-network/pyuheprng
 
-RUN git clone https://github.com/ness-network/pyuheprng.git /opt/pyuheprng \
-    && cd /opt/pyuheprng \
-    && pip3 install --no-cache-dir -r requirements.txt
+RUN mkdir -p ${GOPATH}/src/github.com/ness-network \
+    && git clone https://github.com/ness-network/privatenumer.git ${GOPATH}/src/github.com/ness-network/privatenumer
 
-RUN git clone https://github.com/ness-network/privatenumer.git /opt/privatenumer \
-    && cd /opt/privatenumer \
-    && pip3 install --no-cache-dir -r requirements.txt
-
-RUN git clone https://github.com/ness-network/privatenesstools.git /opt/privatenesstools \
-    && cd /opt/privatenesstools \
-    && pip3 install --no-cache-dir -r requirements.txt
+RUN mkdir -p ${GOPATH}/src/github.com/ness-network \
+    && git clone https://github.com/ness-network/privatenesstools.git ${GOPATH}/src/github.com/ness-network/privatenesstools
 
 # Create data directories
 RUN mkdir -p /data/emercoin /data/yggdrasil /data/i2p /data/skywire
