@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     iptables \
     make \
+    tar \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -33,19 +34,31 @@ RUN ARCH=$(dpkg --print-architecture) && \
     && mv emercoin-${EMERCOIN_VERSION}/bin/* /usr/local/bin/ \
     && rm -rf emercoin-*
 
-# Build Yggdrasil
-RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git /tmp/yggdrasil \
-    && cd /tmp/yggdrasil \
-    && ./build \
-    && mv yggdrasil yggdrasilctl /usr/local/bin/ \
-    && cd / && rm -rf /tmp/yggdrasil
+ENV YGGDRASIL_VERSION=0.5.12
 
-# Build Skywire
-RUN git clone https://github.com/skycoin/skywire.git /tmp/skywire \
-    && cd /tmp/skywire \
-    && make build-release \
-    && cp build/* /usr/local/bin/ \
-    && cd / && rm -rf /tmp/skywire
+# Install Yggdrasil from vendored tarball (no systemd deps)
+RUN set -e; \
+    wget -O /tmp/yggdrasil.tar.gz "https://github.com/yggdrasil-network/yggdrasil-go/releases/download/v${YGGDRASIL_VERSION}/yggdrasil-${YGGDRASIL_VERSION}-vendored.tar.gz"; \
+    tar -xzf /tmp/yggdrasil.tar.gz -C /usr/local/bin; \
+    rm /tmp/yggdrasil.tar.gz
+
+# Install Skywire from prebuilt v1.3.31 release tarball
+ENV SKYWIRE_VERSION=1.3.31
+RUN set -e; \
+    ARCH=$(dpkg --print-architecture); \
+    case ${ARCH} in \
+        amd64)  SKYWIRE_ARCH="linux-amd64" ;; \
+        arm64)  SKYWIRE_ARCH="linux-arm64" ;; \
+        armhf)  SKYWIRE_ARCH="linux-armhf" ;; \
+        armel)  SKYWIRE_ARCH="linux-arm" ;; \
+        i386)   SKYWIRE_ARCH="linux-386" ;; \
+        *) echo "Unsupported architecture for Skywire: ${ARCH}" && exit 1 ;; \
+    esac; \
+    wget -O /tmp/skywire.tar.gz "https://github.com/skycoin/skywire/releases/download/v${SKYWIRE_VERSION}/skywire-v${SKYWIRE_VERSION}-${SKYWIRE_ARCH}.tar.gz"; \
+    mkdir -p /opt/skywire; \
+    tar -xzf /tmp/skywire.tar.gz -C /opt/skywire; \
+    cp /opt/skywire/* /usr/local/bin/; \
+    rm -rf /tmp/skywire.tar.gz /opt/skywire
 
 # Build DNS Reverse Proxy
 RUN git clone https://github.com/ness-network/dns-reverse-proxy.git /tmp/dns-proxy \

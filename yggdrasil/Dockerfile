@@ -1,21 +1,20 @@
-FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS builder
+FROM debian:bullseye-slim
 
 ARG TARGETPLATFORM
-ARG BUILDPLATFORM
 
-RUN apk add --no-cache git make
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    iptables \
+    tar \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /yggdrasil
+WORKDIR /tmp
 
-RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git . \
-    && ./build
-
-FROM alpine:latest
-
-RUN apk add --no-cache ca-certificates iptables
-
-COPY --from=builder /yggdrasil/yggdrasil /usr/local/bin/
-COPY --from=builder /yggdrasil/yggdrasilctl /usr/local/bin/
+RUN set -e; \
+    curl -fsSL "https://github.com/yggdrasil-network/yggdrasil-go/releases/download/v0.5.12/yggdrasil-0.5.12-vendored.tar.gz" -o yggdrasil.tar.gz; \
+    tar -xzf yggdrasil.tar.gz -C /usr/local/bin; \
+    rm yggdrasil.tar.gz
 
 EXPOSE 9001
 

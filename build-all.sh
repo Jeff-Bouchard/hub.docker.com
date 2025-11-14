@@ -21,5 +21,5 @@ docker build -t ${DOCKER_USER}/ipfs ./ipfs
 docker build -t ${DOCKER_USER}/amneziawg ./amneziawg
 docker build -t ${DOCKER_USER}/skywire-amneziawg ./skywire-amneziawg
 docker build -t ${DOCKER_USER}/ness-unified ./ness-unified
-
+docker build -t ${DOCKER_USER}/amnezia-exit ./amnezia-exit
 echo "All images built successfully for ${DOCKER_USER}!"

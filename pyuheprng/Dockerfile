@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone pyuheprng repository
-RUN git clone https://github.com/ness-network/pyuheprng.git . \
-    && pip install --no-cache-dir -r requirements.txt
+# Clone pyuheprng repository and install package
+RUN git clone https://github.com/NESS-Network/PyUHEPRNG.git . \
+    && pip install --no-cache-dir .
 
 # Environment variables for Emercoin connection
 ENV EMERCOIN_HOST=emercoin-core \

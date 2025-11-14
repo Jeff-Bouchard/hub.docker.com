@@ -9,20 +9,12 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     iproute2 \
     iptables \
-    kmod \
     git \
     build-essential \
-    linux-headers-generic \
     && rm -rf /var/lib/apt/lists/*
 
-# Build AmneziaWG
+# Install AmneziaWG userspace tools only (kernel module must be provided by the host)
 WORKDIR /build
-RUN git clone https://github.com/amnezia-vpn/amneziawg-linux-kernel-module.git \
-    && cd amneziawg-linux-kernel-module/src \
-    && make \
-    && make install
-
-# Install AmneziaWG tools
 RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git \
     && cd amneziawg-tools/src \
     && make \

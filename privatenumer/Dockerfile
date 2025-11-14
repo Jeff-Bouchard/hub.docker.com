@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/ness-network/privatenumer.git . \
-    && pip install --no-cache-dir -r requirements.txt
+RUN git clone https://github.com/NESS-Network/privatenumer.git . \
+    && pip install --no-cache-dir -r enum-server/requirements.txt
 
 EXPOSE 3000
 

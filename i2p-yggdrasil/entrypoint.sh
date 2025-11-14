@@ -22,7 +22,7 @@ cat > /etc/yggdrasil.conf <<EOF
   "IfMTU": 65535,
   "NodeInfoPrivacy": false,
   "NodeInfo": {
-    "name": "i2p-yggdrasil-node"
+    "name": "i2pd-yggdrasil-node"
   }
 }
 EOF
@@ -42,30 +42,27 @@ fi
 
 echo "Yggdrasil interface: $YGG_IFACE"
 
-# Get Yggdrasil IPv6 address
-YGG_ADDR=$(ip -6 addr show $YGG_IFACE | grep -oP '(?<=inet6 )[0-9a-f:]+' | grep '^2' | head -n1)
+# Get Yggdrasil IPv6 address (Yggdrasil addresses start with '2')
+YGG_ADDR=$(ip -6 addr show "$YGG_IFACE" | grep -oP '(?<=inet6 )[0-9a-f:]+' | grep '^2' | head -n1)
 echo "Yggdrasil IPv6: $YGG_ADDR"
 
-# Configure I2P to route through Yggdrasil
-mkdir -p /var/lib/i2p/config
+# Configure i2pd for Yggdrasil-only mode
+mkdir -p /etc/i2pd
 
-# Set I2P to bind to Yggdrasil interface
-cat > /var/lib/i2p/config/router.config <<EOF
-i2np.ntcp.hostname=$YGG_ADDR
-i2np.ntcp.autoip=false
-i2np.udp.host=$YGG_ADDR
-i2np.udp.autoip=false
-router.networkDatabase.flat=true
+cat > /etc/i2pd/i2pd.conf <<EOF
+daemon=false
+ipv4=false
+ipv6=false
+ssu=false
+ntcp2.enabled=false
+ssu2.enabled=false
+meshnets.yggdrasil=true
+meshnets.yggaddress=$YGG_ADDR
 EOF
 
-# Configure I2P wrapper to use IPv6
-cat > /var/lib/i2p/config/wrapper.config <<EOF
-wrapper.java.additional.1=-Djava.net.preferIPv6Addresses=true
-wrapper.java.additional.2=-Djava.net.preferIPv4Stack=false
-EOF
-
-echo "I2P configured to route through Yggdrasil mesh network"
+echo "i2pd configured for Yggdrasil-only mode"
 echo "Yggdrasil Address: $YGG_ADDR"
 
-# Start I2P
-exec i2prouter console
+trap 'kill "$YGGDRASIL_PID" || true' EXIT
+
+exec i2pd --conf=/etc/i2pd/i2pd.conf

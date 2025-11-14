@@ -14,9 +14,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone pyuheprng repository
-RUN git clone https://github.com/ness-network/pyuheprng.git /app/pyuheprng \
+RUN git clone https://github.com/NESS-Network/PyUHEPRNG.git /app/pyuheprng \
     && cd /app/pyuheprng \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir .
 
 # Clone privatenesstools repository
 RUN git clone https://github.com/ness-network/privatenesstools.git /app/privatenesstools \
