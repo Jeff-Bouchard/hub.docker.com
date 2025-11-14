@@ -2,19 +2,24 @@
 
 set -e
 
-echo "Building all ness-network images..."
+DOCKER_USER="nessnetwork"
 
-docker build -t ness-network/emercoin-core ./emercoin-core
-docker build -t ness-network/privateness ./privateness
-docker build -t ness-network/skywire ./skywire
-docker build -t ness-network/pyuheprng ./pyuheprng
-docker build -t ness-network/privatenumer ./privatenumer
-docker build -t ness-network/privatenesstools ./privatenesstools
-docker build -t ness-network/yggdrasil ./yggdrasil
-docker build -t ness-network/i2p-yggdrasil ./i2p-yggdrasil
-docker build -t ness-network/dns-reverse-proxy ./dns-reverse-proxy
-docker build -t ness-network/amneziawg ./amneziawg
-docker build -t ness-network/skywire-amneziawg ./skywire-amneziawg
-docker build -t ness-network/ness-unified ./ness-unified
+echo "Building all images for ${DOCKER_USER}..."
 
-echo "All images built successfully!"
+docker build -t ${DOCKER_USER}/emercoin-core ./emercoin-core
+docker build -t ${DOCKER_USER}/ness-blockchain ./ness-blockchain
+docker build -t ${DOCKER_USER}/privateness ./privateness
+docker build -t ${DOCKER_USER}/skywire ./skywire
+docker build -t ${DOCKER_USER}/pyuheprng ./pyuheprng
+docker build -t ${DOCKER_USER}/privatenumer ./privatenumer
+docker build -t ${DOCKER_USER}/privatenesstools ./privatenesstools
+docker build -t ${DOCKER_USER}/pyuheprng-privatenesstools ./pyuheprng-privatenesstools
+docker build -t ${DOCKER_USER}/yggdrasil ./yggdrasil
+docker build -t ${DOCKER_USER}/i2p-yggdrasil ./i2p-yggdrasil
+docker build -t ${DOCKER_USER}/dns-reverse-proxy ./dns-reverse-proxy
+docker build -t ${DOCKER_USER}/ipfs ./ipfs
+docker build -t ${DOCKER_USER}/amneziawg ./amneziawg
+docker build -t ${DOCKER_USER}/skywire-amneziawg ./skywire-amneziawg
+docker build -t ${DOCKER_USER}/ness-unified ./ness-unified
+
+echo "All images built successfully for ${DOCKER_USER}!"

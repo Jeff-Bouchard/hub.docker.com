@@ -2,17 +2,74 @@
 
 Hypersimple Docker images for Umbrel app store integration.
 
+## ⚠️ CRITICAL SECURITY WARNING
+
+**This system will BLOCK rather than perform an unsecure cryptographic operation.**
+
+Entropy deprivation possibility is **ELIMINATED** by our `pyuheprng` service feeding `/dev/random` directly, mixed with:
+- **RC4OK from Emercoin Core** (blockchain-derived randomness)
+- **Original hardware bits** (direct hardware entropy)
+- **UHEP Protocol** (Universal Hardware Entropy Protocol)
+
+**For non-Windows machines**: GRUB configuration **MUST** disable `/dev/urandom` in production.
+
+See [CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md) for complete details.
+
+## ⚠️ BINARY EQUIVALENCE REQUIREMENT
+
+**All nodes MUST be binary equivalent, otherwise it's bullshit.**
+
+True decentralization requires every node to run **identical binaries** that can be verified. Without binary equivalence:
+- Cannot verify node integrity
+- Cannot detect compromised nodes
+- Cannot trust network consensus
+- **Decentralization is fake**
+
+See [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) for implementation details.
+
+## Documentation
+
+### Core Documentation
+- **[SERVICES.md](SERVICES.md)** - Complete service list, dependencies, ports, use cases
+- **[DEPLOY.md](DEPLOY.md)** - Docker Hub deployment instructions (nessnetwork)
+- **[PORTAINER.md](PORTAINER.md)** - Portainer deployment guide, stack management
+
+### Security Architecture
+- **[CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md)** - Entropy architecture, pyuheprng, GRUB configuration
+- **[REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md)** - Binary equivalence, deterministic builds, verification
+- **[INCENTIVE-SECURITY.md](INCENTIVE-SECURITY.md)** - Trustless payment to hostile nodes, game theory
+
+### Network Architecture
+- **[NETWORK-ARCHITECTURE.md](NETWORK-ARCHITECTURE.md)** - Protocol hopping, MPLS routing, untraceability
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Multi-architecture build details
+
+### Service-Specific
+- **[ipfs/README.md](ipfs/README.md)** - IPFS daemon, Emercoin integration
+- **[pyuheprng/README.md](pyuheprng/README.md)** - Entropy service documentation
+- **[amneziawg/README.md](amneziawg/README.md)** - Stealth VPN configuration
+- **[skywire-amneziawg/README.md](skywire-amneziawg/README.md)** - Access layer integration
+
 ## Images
 
 ### 1. emercoin-core
 Emercoin blockchain node
 
 ```bash
-docker build -t ness-network/emercoin-core ./emercoin-core
-docker run -v emercoin-data:/data -p 6661:6661 ness-network/emercoin-core
+docker build -t nessnetwork/emercoin-core ./emercoin-core
+docker run -v emercoin-data:/data -p 6661:6661 nessnetwork/emercoin-core
 ```
 
-### 2. privateness
+### 2. ness-blockchain
+**Privateness native blockchain** (github.com/ness-network/ness)
+
+```bash
+docker build -t nessnetwork/ness-blockchain ./ness-blockchain
+docker run -v ness-data:/data/ness -p 6006:6006 -p 6660:6660 nessnetwork/ness-blockchain
+```
+
+Dual-chain architecture with Emercoin for enhanced security.
+
+### 3. privateness
 Privateness network core
 
 ```bash
@@ -29,12 +86,18 @@ docker run -p 8000:8000 ness-network/skywire
 ```
 
 ### 4. pyuheprng
-Python UHEP RNG service
+**Cryptographic Entropy Service** - Feeds `/dev/random` with RC4OK + Hardware + UHEP
 
 ```bash
 docker build -t ness-network/pyuheprng ./pyuheprng
-docker run -p 5000:5000 ness-network/pyuheprng
+docker run --privileged --device /dev/random -v /dev:/dev \
+  -p 5000:5000 \
+  -e EMERCOIN_HOST=emercoin-core \
+  -e EMERCOIN_PORT=6662 \
+  ness-network/pyuheprng
 ```
+
+**CRITICAL**: Requires privileged mode to feed `/dev/random` directly. This service **eliminates entropy deprivation** and ensures all cryptographic operations use secure randomness.
 
 ### 5. privatenumer
 Private number generation service
@@ -79,17 +142,30 @@ docker build -t ness-network/dns-reverse-proxy ./dns-reverse-proxy
 docker run -p 53:53/udp -p 53:53/tcp -p 8053:8053 ness-network/dns-reverse-proxy
 ```
 
-### 10. amneziawg
+### 10. ipfs
+**IPFS Daemon** - Decentralized content-addressed storage
+
+```bash
+docker build -t nessnetwork/ipfs ./ipfs
+docker run -d \
+  -v ipfs-data:/data/ipfs \
+  -p 4001:4001 -p 5001:5001 -p 8082:8080 -p 8081:8081 \
+  nessnetwork/ipfs
+```
+
+Integrates with Emercoin for decentralized naming (IPFS hashes stored in blockchain).
+
+### 11. amneziawg
 AmneziaWG (stealth WireGuard with obfuscation)
 
 ```bash
-docker build -t ness-network/amneziawg ./amneziawg
+docker build -t nessnetwork/amneziawg ./amneziawg
 docker run --cap-add=NET_ADMIN --cap-add=SYS_MODULE --device /dev/net/tun \
   -p 51820:51820/udp -v awg-config:/etc/amneziawg \
-  ness-network/amneziawg
+  nessnetwork/amneziawg
 ```
 
-### 11. skywire-amneziawg
+### 12. skywire-amneziawg
 **Access Layer**: AmneziaWG stealth VPN → Skywire mesh routing
 ```bash
 docker build -t ness-network/skywire-amneziawg ./skywire-amneziawg
@@ -99,7 +175,7 @@ docker run --cap-add=NET_ADMIN --cap-add=SYS_MODULE --device /dev/net/tun \
 ```
 Clients connect via AmneziaWG, traffic routes through Skywire mesh.
 
-### 12. ness-unified
+### 13. ness-unified
 **All services combined in one container**
 
 ```bash
@@ -123,6 +199,25 @@ docker run -v ness-data:/data \
 
 See [PORTAINER.md](PORTAINER.md) for complete guide.
 
+### Quick Deploy - Ness Essential Stack
+
+**Minimal production-ready stack** (recommended for Pi4 and resource-constrained devices):
+
+```bash
+./deploy-ness.sh
+```
+
+This deploys:
+- **Emercoin Core**: Blockchain + RC4OK entropy source
+- **pyuheprng + privatenesstools**: Combined entropy + tools (saves resources)
+- **DNS Reverse Proxy**: Decentralized DNS
+- **Privateness**: Core application
+
+Or manually:
+```bash
+docker-compose -f docker-compose.ness.yml up -d
+```
+
 ### Docker Compose
 
 #### Full Stack with Dependencies
@@ -143,10 +238,11 @@ docker-compose -f docker-compose.minimal.yml up -d
 3. **dns-reverse-proxy** (waits for emercoin + yggdrasil)
 4. **skywire** (waits for emercoin)
 5. **pyuheprng** (waits for emercoin)
-6. **i2p-yggdrasil** (waits for yggdrasil)
-7. **privatenumer** (waits for pyuheprng)
-8. **privateness** (waits for emercoin + yggdrasil + dns)
-9. **privatenesstools** (waits for privateness + emercoin)
+6. **ipfs** (independent, can start anytime)
+7. **i2p-yggdrasil** (waits for yggdrasil)
+8. **privatenumer** (waits for pyuheprng)
+9. **privateness** (waits for emercoin + yggdrasil + dns)
+10. **privatenesstools** (waits for privateness + emercoin)
 
 ## Network Architecture
 

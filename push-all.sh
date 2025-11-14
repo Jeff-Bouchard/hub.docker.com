@@ -2,19 +2,25 @@
 
 set -e
 
-echo "Pushing all ness-network images to Docker Hub..."
+DOCKER_USER="nessnetwork"
 
-docker push ness-network/emercoin-core
-docker push ness-network/privateness
-docker push ness-network/skywire
-docker push ness-network/pyuheprng
-docker push ness-network/privatenumer
-docker push ness-network/privatenesstools
-docker push ness-network/yggdrasil
-docker push ness-network/i2p-yggdrasil
-docker push ness-network/dns-reverse-proxy
-docker push ness-network/amneziawg
-docker push ness-network/skywire-amneziawg
-docker push ness-network/ness-unified
+echo "Pushing all images to Docker Hub (${DOCKER_USER})..."
 
-echo "All images pushed successfully!"
+# Push each image
+docker push ${DOCKER_USER}/emercoin-core
+docker push ${DOCKER_USER}/ness-blockchain
+docker push ${DOCKER_USER}/privateness
+docker push ${DOCKER_USER}/skywire
+docker push ${DOCKER_USER}/pyuheprng
+docker push ${DOCKER_USER}/privatenumer
+docker push ${DOCKER_USER}/privatenesstools
+docker push ${DOCKER_USER}/pyuheprng-privatenesstools
+docker push ${DOCKER_USER}/yggdrasil
+docker push ${DOCKER_USER}/i2p-yggdrasil
+docker push ${DOCKER_USER}/dns-reverse-proxy
+docker push ${DOCKER_USER}/ipfs
+docker push ${DOCKER_USER}/amneziawg
+docker push ${DOCKER_USER}/skywire-amneziawg
+docker push ${DOCKER_USER}/ness-unified
+
+echo "All images pushed successfully to ${DOCKER_USER}!"

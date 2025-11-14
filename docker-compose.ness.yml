@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  emercoin-core:
+    image: nessnetwork/emercoin-core:latest
+    container_name: emercoin-core
+    volumes:
+      - emercoin-data:/data
+    ports:
+      - "6661:6661"
+      - "6662:6662"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "emercoin-cli", "getinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - ness-network
+
+  pyuheprng-privatenesstools:
+    image: nessnetwork/pyuheprng-privatenesstools:latest
+    container_name: pyuheprng-privatenesstools
+    privileged: true
+    devices:
+      - /dev/random
+    volumes:
+      - /dev:/dev
+    ports:
+      - "5000:5000"    # pyuheprng
+      - "8888:8888"    # privatenesstools
+    restart: unless-stopped
+    environment:
+      - EMERCOIN_HOST=emercoin-core
+      - EMERCOIN_PORT=6662
+      - EMERCOIN_USER=${EMERCOIN_RPC_USER:-rpcuser}
+      - EMERCOIN_PASS=${EMERCOIN_RPC_PASS:-rpcpassword}
+      - MIN_ENTROPY_RATE=1000
+      - BLOCK_ON_LOW_ENTROPY=true
+    depends_on:
+      emercoin-core:
+        condition: service_healthy
+    networks:
+      - ness-network
+
+  dns-reverse-proxy:
+    image: nessnetwork/dns-reverse-proxy:latest
+    container_name: dns-reverse-proxy
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "8053:8053"
+    restart: unless-stopped
+    depends_on:
+      - emercoin-core
+    networks:
+      - ness-network
+
+  privateness:
+    image: nessnetwork/privateness:latest
+    container_name: privateness
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - emercoin-core
+      - dns-reverse-proxy
+      - pyuheprng-privatenesstools
+    networks:
+      - ness-network
+
+  ipfs:
+    image: nessnetwork/ipfs:latest
+    container_name: ipfs
+    volumes:
+      - ipfs-data:/data/ipfs
+    ports:
+      - "4001:4001"     # P2P swarm
+      - "5001:5001"     # API
+      - "8080:8080"     # Gateway (conflicts with privateness, change if needed)
+      - "8081:8081"     # WebUI
+    environment:
+      - IPFS_STORAGE_MAX=50GB
+    restart: unless-stopped
+    networks:
+      - ness-network
+
+volumes:
+  emercoin-data:
+  ipfs-data:
+
+networks:
+  ness-network:
+    driver: bridge

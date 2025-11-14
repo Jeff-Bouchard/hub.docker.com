@@ -162,15 +162,28 @@ services:
   pyuheprng:
     image: ness-network/pyuheprng:latest
     container_name: pyuheprng
+    privileged: true
+    devices:
+      - /dev/random
+    volumes:
+      - /dev:/dev
     ports:
       - "5000:5000"
     restart: unless-stopped
+    environment:
+      - EMERCOIN_HOST=emercoin-core
+      - EMERCOIN_PORT=6662
+      - EMERCOIN_USER=${EMERCOIN_RPC_USER:-rpcuser}
+      - EMERCOIN_PASS=${EMERCOIN_RPC_PASS:-rpcpassword}
+      - MIN_ENTROPY_RATE=1000
+      - BLOCK_ON_LOW_ENTROPY=true
     labels:
       - "io.portainer.accesscontrol.teams=privateness"
-      - "com.privateness.service=rng"
-      - "com.privateness.layer=application"
+      - "com.privateness.service=entropy"
+      - "com.privateness.layer=security"
+      - "com.privateness.description=Cryptographic entropy - feeds /dev/random"
     depends_on:
-      emercoin-core:
+      - emercoin-core:
         condition: service_healthy
 
   privatenumer:
