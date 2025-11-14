@@ -17,10 +17,10 @@ RUN apt-get update && apt-get install -y \
 # Clone Ness blockchain repository
 RUN git clone https://github.com/ness-network/ness.git
 
-# Build Ness blockchain
+# Build Privateness blockchain
 WORKDIR /build/ness
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w" -o /usr/local/bin/nessd ./cmd/nessd
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w" -o /usr/local/bin/ness-cli ./cmd/ness-cli
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w" -o /usr/local/bin/privateness ./cmd/privateness
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w" -o /usr/local/bin/privateness-cli ./cmd/privateness-cli
 
 # Final stage
 FROM debian:bullseye-slim
@@ -31,8 +31,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binaries from builder
-COPY --from=builder /usr/local/bin/nessd /usr/local/bin/nessd
-COPY --from=builder /usr/local/bin/ness-cli /usr/local/bin/ness-cli
+COPY --from=builder /usr/local/bin/privateness /usr/local/bin/privateness
+COPY --from=builder /usr/local/bin/privateness-cli /usr/local/bin/privateness-cli
 
 # Create ness user
 RUN useradd -m -u 1000 -s /bin/bash ness
@@ -54,9 +54,9 @@ EXPOSE 6006 6660
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ness-cli getinfo || exit 1
+    CMD privateness-cli status || exit 1
 
 VOLUME /data/ness
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["nessd"]
+CMD ["privateness"]
