@@ -1,5 +1,5 @@
 # Build amnezia-xray-core
-FROM golang:1.22-alpine AS xray-builder
+FROM golang:1.25-alpine AS xray-builder
 
 RUN apk add --no-cache git
 
@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
 # Install AmneziaWG userspace tools (no kernel module here)
 WORKDIR /build
 RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git . \
+    && cd src \
     && make \
     && make install
 
