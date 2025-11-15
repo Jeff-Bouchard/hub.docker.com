@@ -39,6 +39,12 @@ services:
       - "53:53/udp"
       - "53:53/tcp"
       - "8053:8053"
+    environment:
+      - EMERCOIN_HOST=emercoin-core
+      - EMERCOIN_PORT=6662
+      - EMERCOIN_USER=${EMERCOIN_RPC_USER:-rpcuser}
+      - EMERCOIN_PASS=${EMERCOIN_RPC_PASS:-rpcpassword}
+      - DNS_NVS_KEY=ness:dns-reverse-proxy-config
     restart: unless-stopped
     depends_on:
       - emercoin-core

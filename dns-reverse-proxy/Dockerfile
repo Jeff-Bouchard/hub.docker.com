@@ -14,10 +14,12 @@ RUN git clone https://github.com/ness-network/dns-reverse-proxy.git . \
 
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates curl
 
 COPY --from=builder /app/dns-reverse-proxy /usr/local/bin/
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 53/udp 53/tcp 8053
 
-ENTRYPOINT ["dns-reverse-proxy"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
