@@ -148,7 +148,8 @@ services:
     image: ness-network/privateness:latest
     container_name: privateness
     ports:
-      - "8080:8080"
+      - "6006:6006"
+      - "6660:6660"
     restart: unless-stopped
     labels:
       - "io.portainer.accesscontrol.teams=privateness"

@@ -61,7 +61,8 @@ services:
     image: nessnetwork/privateness:latest
     container_name: privateness
     ports:
-      - "8080:8080"
+      - "6006:6006"  # P2P
+      - "6660:6660"  # RPC
     restart: unless-stopped
     depends_on:
       - emercoin-core

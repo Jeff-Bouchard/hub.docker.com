@@ -84,7 +84,7 @@ Privateness network core
 
 ```bash
 docker build -t ness-network/privateness ./privateness
-docker run -p 8080:8080 ness-network/privateness
+docker run -p 6006:6006 -p 6660:6660 ness-network/privateness
 ```
 
 ### 3. skywire
@@ -192,9 +192,10 @@ Clients connect via AmneziaWG, traffic routes through Skywire mesh.
 docker build -t ness-network/ness-unified ./ness-unified
 docker run -v ness-data:/data \
   -p 6661:6661 -p 6662:6662 -p 8775:8775 \
+  -p 6006:6006 -p 6660:6660 \
   -p 9001:9001 -p 7657:7657 -p 4444:4444 -p 6668:6668 \
   -p 8000:8000 -p 53:53/udp -p 53:53/tcp -p 8053:8053 \
-  -p 8080:8080 -p 5000:5000 -p 3000:3000 -p 8888:8888 \
+  -p 5000:5000 -p 3000:3000 -p 8888:8888 \
   ness-network/ness-unified
 ```
 

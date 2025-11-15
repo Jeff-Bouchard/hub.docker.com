@@ -15,7 +15,7 @@ Complete list of all services in the privateness.network stack.
 **Core application**
 - Network coordination
 - Service management
-- Port: 8080
+- Ports: 6006 (P2P), 6660 (RPC)
 
 ### 3. DNS Reverse Proxy
 **Decentralized DNS**
@@ -132,7 +132,7 @@ skywire-amneziawg (independent)
 | Service | Ports | Protocol |
 |---------|-------|----------|
 | emercoin-core | 6661, 6662 | TCP |
-| privateness | 8080 | HTTP |
+| privateness | 6006, 6660 | TCP |
 | dns-reverse-proxy | 53, 8053 | UDP/TCP, HTTP |
 | pyuheprng | 5000 | HTTP |
 | privatenumer | 3000 | HTTP |
