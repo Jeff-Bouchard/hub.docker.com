@@ -4,7 +4,7 @@ AmneziaWG provides the **access layer** with stealth VPN capabilities, connectin
 
 ## Architecture
 
-```
+```text
 Client Device (TCP/IP)
     ↓
 AmneziaWG Access Layer (Obfuscated UDP)
@@ -38,12 +38,14 @@ Privateness Services / Internet
 ## Key Features
 
 ### AmneziaWG Access Layer
+
 - **Stealth VPN**: DPI-resistant obfuscation
 - **Client gateway**: 10.8.0.0/24 network
 - **Auto-configuration**: Generates obfuscation params
 - **NAT traversal**: Works behind firewalls
 
 ### Skywire Mesh Integration
+
 - **Direct binding**: Skywire binds to AmneziaWG interface
 - **Mesh routing**: Decentralized path selection
 - **Load balancing**: Distributed across mesh nodes
@@ -102,24 +104,28 @@ H4 = <server_H4>
 ## Use Cases
 
 ### 1. Censorship Bypass
+
 - Client in restricted country
 - AmneziaWG bypasses DPI/firewall
 - Skywire provides decentralized routing
 - No single point of censorship
 
 ### 2. Privacy-First Access
+
 - Client traffic obfuscated (AmneziaWG)
 - Routing decentralized (Skywire)
 - No central VPN provider
 - Mesh network anonymity
 
 ### 3. Corporate Network Access
+
 - Bypass corporate DPI
 - Access privateness.network services
 - Decentralized routing prevents blocking
 - Stealth mode hides VPN usage
 
 ### 4. IoT Device Gateway
+
 - IoT devices connect via AmneziaWG
 - Traffic routed through Skywire mesh
 - Decentralized IoT network
@@ -128,21 +134,25 @@ H4 = <server_H4>
 ## Monitoring
 
 ### Check AmneziaWG Status
+
 ```bash
 docker exec skywire-amneziawg awg show awg0
 ```
 
 ### Check Skywire Peers
+
 ```bash
 docker exec skywire-amneziawg skywire-cli visor info
 ```
 
 ### View Routing Table
+
 ```bash
 docker exec skywire-amneziawg ip route show table 100
 ```
 
 ### Monitor Traffic
+
 ```bash
 docker exec skywire-amneziawg iftop -i awg0
 ```
@@ -150,12 +160,14 @@ docker exec skywire-amneziawg iftop -i awg0
 ## Security
 
 ### Access Layer Protection
+
 - **Obfuscated handshake**: Undetectable by DPI
 - **Random packet timing**: Prevents pattern analysis
 - **Header randomization**: Looks like random data
 - **Size obfuscation**: Variable packet sizes
 
 ### Mesh Layer Security
+
 - **Encrypted routing**: End-to-end encryption
 - **No central authority**: Decentralized trust
 - **Multi-path routing**: Traffic split across nodes
@@ -171,6 +183,7 @@ docker exec skywire-amneziawg iftop -i awg0
 ## Troubleshooting
 
 ### AmneziaWG not starting
+
 ```bash
 # Check kernel module
 docker exec skywire-amneziawg lsmod | grep amneziawg
@@ -180,6 +193,7 @@ docker exec skywire-amneziawg ip link show awg0
 ```
 
 ### Skywire not routing
+
 ```bash
 # Check Skywire status
 docker exec skywire-amneziawg skywire-cli visor info
@@ -189,6 +203,7 @@ docker exec skywire-amneziawg ip route
 ```
 
 ### Client can't connect
+
 1. Verify obfuscation params match server
 2. Check firewall allows UDP 51821
 3. Verify server public key is correct
@@ -197,6 +212,7 @@ docker exec skywire-amneziawg ip route
 ## Integration with Privateness Network
 
 This access layer integrates with:
+
 - **Emercoin**: Blockchain-based service discovery
 - **Yggdrasil**: IPv6 mesh overlay
 - **I2P**: Anonymous network layer

@@ -178,7 +178,7 @@ console.log(`Chain: ${info.chain}`);
 
 Ness blockchain works alongside Emercoin for enhanced security:
 
-```
+```text
 Ness Blockchain (Native)
     ↓
 Emercoin (Established security)
@@ -281,7 +281,8 @@ docker run -e NESS_MAX_CONNECTIONS=250 nessnetwork/ness-blockchain
 ### Enable Pruning (Save Disk Space)
 
 Add to `ness.conf`:
-```
+
+```text
 prune=550  # Keep only last 550MB of blocks
 ```
 
@@ -355,13 +356,14 @@ docker run -e NESS_REGTEST=1 nessnetwork/ness-blockchain
 
 ## Resources
 
-- GitHub: https://github.com/ness-network/ness
-- Documentation: https://docs.privateness.network
-- Explorer: https://explorer.privateness.network
-- API Docs: https://api.privateness.network
+- GitHub: <https://github.com/ness-network/ness>
+- Documentation: <https://docs.privateness.network>
+- Explorer: <https://explorer.privateness.network>
+- API Docs: <https://api.privateness.network>
 
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/ness-network/ness/issues
-- Community: https://community.privateness.network
+
+- GitHub Issues: <https://github.com/ness-network/ness/issues>
+- Community: <https://community.privateness.network>

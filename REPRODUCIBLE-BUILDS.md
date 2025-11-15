@@ -5,14 +5,17 @@
 **All nodes MUST be binary equivalent, otherwise it's bullshit.**
 
 In a truly decentralized network, every node must be able to verify that:
-1. All other nodes are running **identical binaries**
+
+1. **All other nodes** are running **identical binaries**
 2. No node has been compromised or modified
 3. Network consensus is based on **verified identical code**
+
 
 ## The Problem with Non-Reproducible Builds
 
 ### Without Binary Equivalence
-```
+
+```text
 Node A builds from source → Binary A (hash: abc123...)
 Node B builds from source → Binary B (hash: def456...)
 Node C builds from source → Binary C (hash: 789xyz...)
@@ -25,7 +28,8 @@ Result: DIFFERENT BINARIES
 ```
 
 ### With Binary Equivalence (Reproducible Builds)
-```
+
+```text
 Node A builds from source → Binary (hash: abc123...)
 Node B builds from source → Binary (hash: abc123...)
 Node C builds from source → Binary (hash: abc123...)
@@ -280,7 +284,7 @@ def verify_peer(peer_address):
 
 **Each architecture must have its own manifest:**
 
-```
+```text
 ness:manifest:emercoin:0.8.5:amd64   → hash: abc123...
 ness:manifest:emercoin:0.8.5:arm64   → hash: def456...
 ness:manifest:emercoin:0.8.5:armv7   → hash: 789xyz...
@@ -406,7 +410,8 @@ jobs:
 
 ## Why This Matters
 
-### Without Binary Equivalence
+### Without Binary Equivalence (Recap)
+
 - ❌ Cannot verify node integrity
 - ❌ Cannot detect compromised nodes
 - ❌ Cannot trust network consensus
@@ -414,6 +419,7 @@ jobs:
 - ❌ **Decentralization is fake**
 
 ### With Binary Equivalence
+
 - ✅ Every node verifies every other node
 - ✅ Compromised nodes instantly detected
 - ✅ Network consensus mathematically trustworthy
@@ -449,6 +455,7 @@ Without it, you're just running a distributed system with centralized trust. Wit
 Binary equivalence enables **trustless incentivization of hostile nodes**.
 
 You can securely pay node operators (even if they're actively hostile) because:
+
 1. Binary verification proves they're running legitimate code
 2. Challenge-response proves they're actually executing it
 3. Proof-of-work proves they did the work
