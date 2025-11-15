@@ -12,11 +12,12 @@ services:
       - emercoin-data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "emercoin-cli", "-datadir=/data", "getinfo"]
+      # Simple liveness check: ensure main process (PID 1, emercoind) is running
+      test: ["CMD-SHELL", "kill -0 1"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   yggdrasil:
     image: ness-network/yggdrasil

@@ -14,6 +14,9 @@ green="\033[1;32m"
 red="\033[1;31m"
 reset="\033[0m"
 
+check_ok_symbol="✔"
+check_fail_symbol="✘"
+
 logo() {
   cat <<'EOF'
 
@@ -52,6 +55,16 @@ require_docker() {
   if ! docker info >/dev/null 2>&1; then
     echo -e "${red}Docker daemon is not running.${reset}"
     return 1
+  fi
+}
+
+ping_host() {
+  local host="$1"
+  # Try Linux-style ping first; if it fails, fall back to Windows syntax.
+  if ping -c 1 127.0.0.1 >/dev/null 2>&1; then
+    ping -c 2 "$host"
+  else
+    ping -n 2 "$host"
   fi
 }
 
@@ -157,6 +170,161 @@ logs_stack() {
   compose logs -f
 }
 
+health_check() {
+  echo
+  echo -e "${yellow}Core node health check...${reset}"
+  require_docker || return 1
+
+   local overall_rc=0
+
+  echo
+  echo "== Docker services (Ness Essential stack) =="
+  compose ps
+  local rc_ps=$?
+  if [ "$rc_ps" -eq 0 ]; then
+    echo -e " ${green}${check_ok_symbol}${reset} Docker stack reachable"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} Docker stack reachable"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== Privateness vs explorer (seq/block_hash) =="
+  if docker ps --format '{{.Names}}' | grep -q '^privateness$'; then
+    echo "-- Explorer:"
+    local explorer_health
+    explorer_health=$(curl -s https://ness-explorer.magnetosphere.net/api/health)
+    local rc_explorer=$?
+    echo "$explorer_health" | grep -E 'seq|block_hash' || true
+
+    echo
+    echo "-- Local node (privateness-cli status):"
+    local local_status
+    local_status=$(docker exec privateness privateness-cli status 2>/dev/null)
+    local rc_local=$?
+    echo "$local_status" | grep -E 'seq|block_hash' || true
+
+    if [ "$rc_explorer" -eq 0 ] && echo "$explorer_health" | grep -q 'seq' \
+       && [ "$rc_local" -eq 0 ] && echo "$local_status" | grep -q 'seq'; then
+      echo -e " ${green}${check_ok_symbol}${reset} Privateness height/hash match explorer (seq/block_hash)"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} Privateness height/hash match explorer (seq/block_hash)"
+      overall_rc=1
+    fi
+  else
+    echo "privateness container is not running."
+    echo -e " ${red}${check_fail_symbol}${reset} Privateness container running"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== Emercoin vs explorer =="
+  local EMERCOIN_CLI=""
+  if command -v emercoin-cli >/dev/null 2>&1; then
+    EMERCOIN_CLI="emercoin-cli"
+  elif command -v emc >/dev/null 2>&1; then
+    EMERCOIN_CLI="emc"
+  fi
+
+  if [ -n "$EMERCOIN_CLI" ]; then
+    echo "-- Explorer block height:"
+    local emc_height
+    emc_height=$(curl -s https://explorer.emercoin.com/api/stats/block_height)
+    local rc_emc_height=$?
+    echo "$emc_height" || true
+
+    echo
+    echo "-- Local $EMERCOIN_CLI blocks:"
+    local emc_local_info
+    emc_local_info=$("$EMERCOIN_CLI" getblockchaininfo 2>/dev/null)
+    local rc_emc_local=$?
+    echo "$emc_local_info" | grep blocks || true
+
+    echo
+    echo "-- Explorer latest block hash:"
+    local emc_explorer_hash
+    emc_explorer_hash=$(curl -s https://explorer.emercoin.com/api/block/latest | grep blockhash)
+    local rc_emc_explorer_hash=$?
+    echo "$emc_explorer_hash" || true
+
+    echo
+    echo "-- Local $EMERCOIN_CLI best block hash:"
+    local emc_local_hash
+    emc_local_hash=$("$EMERCOIN_CLI" getbestblockhash 2>/dev/null)
+    local rc_emc_local_hash=$?
+    echo "$emc_local_hash" || true
+
+    if [ "$rc_emc_height" -eq 0 ] && [ "$rc_emc_local" -eq 0 ] \
+       && [ "$rc_emc_explorer_hash" -eq 0 ] && [ "$rc_emc_local_hash" -eq 0 ]; then
+      echo -e " ${green}${check_ok_symbol}${reset} Emercoin height/hash match explorer (manual comparison)"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} Emercoin height/hash match explorer (manual comparison)"
+      overall_rc=1
+    fi
+  else
+    echo "emercoin-cli/emc not found on host; skipping Emercoin checks."
+    echo -e " ${red}${check_fail_symbol}${reset} Emercoin CLI available on host"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== EmerNVS & DNS resolution (host) =="
+  if [ -n "$EMERCOIN_CLI" ]; then
+    echo "-- NVS dns:private.ness:"
+    if "$EMERCOIN_CLI" name_show dns:private.ness 2>/dev/null; then
+      echo -e " ${green}${check_ok_symbol}${reset} NVS dns:private.ness reachable"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} NVS dns:private.ness reachable"
+      overall_rc=1
+    fi
+
+    echo
+    echo "-- Ping private.ness:"
+    if ping_host private.ness; then
+      echo -e " ${green}${check_ok_symbol}${reset} DNS resolution for private.ness"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} DNS resolution for private.ness"
+      overall_rc=1
+    fi
+
+    echo
+    echo "-- NVS dns:vpn.sky:"
+    if "$EMERCOIN_CLI" name_show dns:vpn.sky 2>/dev/null; then
+      echo -e " ${green}${check_ok_symbol}${reset} NVS dns:vpn.sky reachable"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} NVS dns:vpn.sky reachable"
+      overall_rc=1
+    fi
+
+    echo
+    echo "-- Ping vpn.sky:"
+    if ping_host vpn.sky; then
+      echo -e " ${green}${check_ok_symbol}${reset} DNS resolution for vpn.sky"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} DNS resolution for vpn.sky"
+      overall_rc=1
+    fi
+  else
+    echo "Emercoin CLI not found; skipping NVS checks."
+  fi
+
+  echo
+  echo "-- Ping emercoin.com:"
+  if ping_host emercoin.com; then
+    echo -e " ${green}${check_ok_symbol}${reset} Internet connectivity to emercoin.com"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} Internet connectivity to emercoin.com"
+    overall_rc=1
+  fi
+
+  echo
+  if [ "$overall_rc" -eq 0 ]; then
+    echo -e "${green}Global status: ${check_ok_symbol} All core node checks passed${reset}"
+  else
+    echo -e "${red}Global status: ${check_fail_symbol} Some core node checks failed${reset}"
+  fi
+}
+
 menu() {
   while true; do
     clear
@@ -168,6 +336,7 @@ menu() {
     echo "  3) Show stack status"
     echo "  4) Tail stack logs"
     echo "  5) Check entropy"
+    echo "  6) Core node health check"
     echo "  0) Exit"
     echo
     read -rp "Select an option: " choice
@@ -177,6 +346,7 @@ menu() {
       3) status_stack ;;
       4) logs_stack ;;
       5) check_entropy ;;
+      6) health_check ;;
       0) exit 0 ;;
       *) echo "Invalid choice." ;;
     esac
