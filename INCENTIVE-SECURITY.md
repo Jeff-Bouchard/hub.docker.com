@@ -1,5 +1,7 @@
 # Incentive Security - Rewarding Hostile Nodes
 
+[Français](INCENTIVE-SECURITY-FR.md)
+
 ## The Paradox: Paying Your Enemies
 
 **How can you securely reward hostile nodes for running your infrastructure?**

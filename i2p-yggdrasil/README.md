@@ -1,5 +1,7 @@
 # I2P with Yggdrasil Routing
 
+[Français](README-FR.md)
+
 This container runs I2P (Invisible Internet Project) with all traffic routed through the Yggdrasil mesh network.
 
 ## How It Works

@@ -1,5 +1,7 @@
 # Démon IPFS – Stockage décentralisé
 
+[English](README.md)
+
 InterPlanetary File System (IPFS) – démon pour le stockage décentralisé adressé par contenu, utilisé ici comme couche de stockage immuable pour des données critiques du réseau Privateness.
 
 ## Fonctionnalités

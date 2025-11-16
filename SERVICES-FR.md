@@ -1,5 +1,7 @@
 # Services du réseau Privateness
 
+[English](SERVICES.md)
+
 Carte opérationnelle de tous les services de la pile privateness.network.
 Chaque composant est une brique d’infrastructure de sécurité, avec ports et dépendances explicitement exposés pour les équipes ops/secops.
 
@@ -378,19 +380,19 @@ Les labels Portainer permettent un contrôle d’accès par équipe.
 
 ## Liens de documentation
 
-- [CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md) – Entropie et sécurité
-- [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) – Vérification binaire
-- [INCENTIVE-SECURITY.md](INCENTIVE-SECURITY.md) – Sécurité économique
-- [NETWORK-ARCHITECTURE.md](NETWORK-ARCHITECTURE.md) – Protocol hopping
-- [PORTAINER.md](PORTAINER.md) – Guide de déploiement
-- [DEPLOY.md](DEPLOY.md) – Déploiement Docker Hub
+- [CRYPTOGRAPHIC-SECURITY-FR.md](CRYPTOGRAPHIC-SECURITY-FR.md) – Entropie et sécurité
+- [REPRODUCIBLE-BUILDS-FR.md](REPRODUCIBLE-BUILDS-FR.md) – Vérification binaire
+- [INCENTIVE-SECURITY-FR.md](INCENTIVE-SECURITY-FR.md) – Sécurité économique
+- [NETWORK-ARCHITECTURE-FR.md](NETWORK-ARCHITECTURE-FR.md) – Protocol hopping
+- [PORTAINER-FR.md](PORTAINER-FR.md) – Guide de déploiement
+- [DEPLOY-FR.md](DEPLOY-FR.md) – Déploiement Docker Hub
 
 ## Support
 
 Pour la documentation spécifique à chaque service, voir le README.md dans chaque dossier :
 
 - `emercoin-core/README.md`
-- `ipfs/README.md`
-- `pyuheprng/README.md`
-- `amneziawg/README.md`
+- `ipfs/README-FR.md`
+- `pyuheprng/README-FR.md`
+- `amneziawg/README-FR.md`
 - etc.

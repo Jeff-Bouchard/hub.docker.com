@@ -1,5 +1,7 @@
 # Blockchain Ness
 
+[English](README.md)
+
 Blockchain native du réseau Privateness – registre d’autorité pour les états et contrats critiques de l’écosystème décentralisé.
 
 ## Fonctionnalités

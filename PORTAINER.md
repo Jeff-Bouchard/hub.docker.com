@@ -1,5 +1,7 @@
 # Portainer Deployment Guide
 
+[Français](PORTAINER-FR.md)
+
 Deploy and manage the entire Privateness Network stack via Portainer.
 
 ## Prerequisites

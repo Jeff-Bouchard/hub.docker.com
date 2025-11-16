@@ -1,5 +1,7 @@
 # Sécurité cryptographique – Garantie d’entropie
 
+[English](CRYPTOGRAPHIC-SECURITY.md)
+
 ## ⚠️ AVERTISSEMENT DE SÉCURITÉ CRITIQUE
 
 **Ce système PRÉFÈRE BLOQUER plutôt que d’exécuter une opération cryptographique non sûre.**

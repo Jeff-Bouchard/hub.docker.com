@@ -1,5 +1,7 @@
 # Privateness Network - Untraceable Architecture
 
+[Français](NETWORK-ARCHITECTURE-FR.md)
+
 ## Multi-Layer Protocol Hopping
 
 The privateness.network stack uses **protocol hopping** across multiple layers, making it **impossible to track or trace**.

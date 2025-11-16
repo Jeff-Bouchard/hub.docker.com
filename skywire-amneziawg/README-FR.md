@@ -1,5 +1,7 @@
 # Couche d’accès Skywire-AmneziaWG
 
+[English](README.md)
+
 Skywire-AmneziaWG est la porte d’entrée du réseau Privateness : AmneziaWG fournit la **couche d’accès** avec des capacités de VPN furtif, connectant directement les clients au mesh Skywire.
 
 ## Architecture

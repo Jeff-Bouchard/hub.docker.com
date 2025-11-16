@@ -1,5 +1,7 @@
 # pyuheprng - Cryptographic Entropy Service
 
+[Français](README-FR.md)
+
 **Universal Hardware Entropy Protocol Random Number Generator**
 
 Feeds `/dev/random` directly with cryptographically secure entropy from multiple sources.

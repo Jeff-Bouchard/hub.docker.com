@@ -1,5 +1,7 @@
 # AmneziaWG - Stealth WireGuard VPN
 
+[Français](README-FR.md)
+
 AmneziaWG is a modified WireGuard protocol with advanced obfuscation to bypass DPI (Deep Packet Inspection) and censorship.
 
 ## Features

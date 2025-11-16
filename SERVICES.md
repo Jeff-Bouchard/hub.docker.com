@@ -1,5 +1,7 @@
 # Privateness Network Services
 
+[Français](SERVICES-FR.md)
+
 Complete list of all services in the privateness.network stack.
 
 ## Core Services

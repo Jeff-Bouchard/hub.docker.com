@@ -1,5 +1,7 @@
 # Sécurité des incitations – Récompenser des nœuds hostiles
 
+[English](INCENTIVE-SECURITY.md)
+
 ## Le paradoxe : payer ses ennemis
 
 **Comment pouvez‑vous récompenser, de façon sûre, des nœuds hostiles qui font tourner votre infrastructure ?**

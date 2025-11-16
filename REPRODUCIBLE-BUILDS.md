@@ -1,5 +1,7 @@
 # Reproducible Builds - Binary Equivalence
 
+[Français](REPRODUCIBLE-BUILDS-FR.md)
+
 ## ⚠️ CRITICAL REQUIREMENT
 
 **All nodes MUST be binary equivalent, otherwise it's bullshit.**

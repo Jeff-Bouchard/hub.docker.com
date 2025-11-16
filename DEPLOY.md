@@ -1,5 +1,7 @@
 # Deploy to Docker Hub - nessnetwork
 
+[Français](DEPLOY-FR.md)
+
 ## Quick Deploy Guide
 
 ### 1. Login to Docker Hub

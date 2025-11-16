@@ -1,5 +1,7 @@
 # Ness Blockchain
 
+[Français](README-FR.md)
+
 Privateness Network's native blockchain - the foundation of the decentralized ecosystem.
 
 ## Features

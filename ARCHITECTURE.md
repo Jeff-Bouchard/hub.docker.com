@@ -1,5 +1,7 @@
 # Multi-Architecture Support
 
+[Français](ARCHITECTURE-FR.md)
+
 All Docker images support multiple CPU architectures for maximum compatibility.
 
 ## Supported Platforms

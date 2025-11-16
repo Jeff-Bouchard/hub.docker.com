@@ -1,5 +1,7 @@
 # Cryptographic Security - Entropy Guarantee
 
+[Français](CRYPTOGRAPHIC-SECURITY-FR.md)
+
 ## ⚠️ CRITICAL SECURITY WARNING
 
 **This system will BLOCK rather than perform an unsecure cryptographic operation.**

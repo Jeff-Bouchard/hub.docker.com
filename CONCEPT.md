@@ -1,5 +1,7 @@
 # Perception → Reality Concept
 
+[Français](CONCEPT-FR.md)
+
 1. **EmerDNS + EmerNVS** (`dpo:PrivateNESS.Network`, `ness:dns-reverse-proxy-config`) are the only sources of truth for identities, bootstrap info, DNS policy, and service URLs. Anything not reachable from those records is treated as untrusted by default.
 2. **DNS enforcement** happens through `dns-reverse-proxy` on `127.0.0.1:53/udp`, which routes Emer-owned TLDs to EmerDNS (`127.0.0.1:5335`) and optionally forwards world TLDs only through trusted upstreams.
 3. **Clearnet existence toggle** switches between a hybrid universe (EmerDNS + world DNS) and an Emer-only cosmos where non-Emer domains are NXDOMAIN/blackholed and effectively do not exist.

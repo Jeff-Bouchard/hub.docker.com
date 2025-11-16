@@ -14,26 +14,26 @@ Each trace below corresponds to a logical flow through the stack, with concrete 
 ### Global OSI Stack Coverage (Mermaid)
 
 ```mermaid
-flowchart TB
+graph TB
     subgraph L1["Foundation / Data Layer"]
-        EMC[Emercoin Core\n(blockchain + NVS)]
-        RNG[pyuheprng-privatenesstools\n(entropy + tools)]
+        EMC[Emercoin Core<br/>(blockchain + NVS)]
+        RNG[pyuheprng-privatenesstools<br/>(entropy + tools)]
         IPFS[IPFS Node]
     end
 
     subgraph L2["Network / Overlay Layer"]
         YGG[Yggdrasil Mesh]
-        I2P[I2P-Yggdrasil\n(anonymity)]
-        SKY[Skywire\n(MPLS routing)]
-        DNS[DNS Reverse Proxy\n(EmerDNS)]
+        I2P[I2P-Yggdrasil<br/>(anonymity)]
+        SKY[Skywire<br/>(MPLS routing)]
+        DNS[DNS Reverse Proxy<br/>(EmerDNS)]
     end
 
     subgraph L3["Application Layer"]
         PRIV[Privateness Core]
         PTOOLS[privatenesstools]
         PNUM[privatenumer]
-        MENU[ness-menu.sh\n(health & control)]
-        PORT[Portainer Stack\n(portainer-stack.yml)]
+        MENU[ness-menu.sh<br/>(health & control)]
+        PORT[Portainer Stack<br/>(portainer-stack.yml)]
     end
 
     EMC --> RNG
@@ -70,17 +70,17 @@ flowchart TB
 **Entry:** `deploy-ness.sh`
 
 ```mermaid
-flowchart TD
-    A[deploy-ness.sh] --> B[Check Docker daemon\n(1a)]
+graph TD
+    A[deploy-ness.sh] --> B[Check Docker daemon<br/>(1a)]
     B --> C[Check docker-compose installed]
-    C --> D[Check entropy configuration\n(1b)]
-    D --> E[User confirmation\nif protections missing]
-    E --> F[docker-compose.ness.yml up -d\n(1c)]
+    C --> D[Check entropy configuration<br/>(1b)]
+    D --> E[User confirmation<br/>if protections missing]
+    E --> F[docker-compose.ness.yml up -d<br/>(1c)]
     F --> G[emercoin-core]
     F --> H[pyuheprng-privatenesstools]
     F --> I[dns-reverse-proxy]
     F --> J[privateness]
-    J --> K[Show running services & health status\n(1d)]
+    J --> K[Show running services & health status<br/>(1d)]
 ```
 
 ```text
@@ -128,19 +128,13 @@ Essential Stack Deployment Flow (deploy-ness.sh)
 **Entry:** `docker-compose.ness.yml`
 
 ```mermaid
-flowchart TD
-    EMC[emercoin-core\n(foundation)] --> RNG[pyuheprng-privatenesstools\n(entropy)]
-    EMC --> DNS[dns-reverse-proxy\n(DNS/NVS)]
-    EMC --> PRIV[privateness\n(core app)]
+graph TD
+    EMC[emercoin-core<br/>(foundation)] --> RNG[pyuheprng-privatenesstools<br/>(entropy)]
+    EMC --> DNS[dns-reverse-proxy<br/>(DNS/NVS)]
+    EMC --> PRIV[privateness<br/>(core app)]
 
     RNG --> PRIV
     DNS --> PRIV
-
-    classDef foundation fill=#1f2937,stroke=#000,color=#fff;
-    classDef service fill=#0f766e,stroke=#000,color=#fff;
-
-    class EMC foundation;
-    class RNG,DNS,PRIV service;
 ```
 
 ```text
@@ -200,13 +194,13 @@ docker-compose.ness.yml Stack Definition
 **Entry:** `pyuheprng-privatenesstools/entrypoint.sh`, `supervisord.conf`
 
 ```mermaid
-flowchart TD
-    A[entrypoint.sh] --> B[Check /dev/random writable\n(3a)]
-    B --> C[Wait for Emercoin RPC\n(3b)]
-    C --> D[Read entropy_avail\n(3c)]
+graph TD
+    A[entrypoint.sh] --> B[Check /dev/random writable<br/>(3a)]
+    B --> C[Wait for Emercoin RPC<br/>(3b)]
+    C --> D[Read entropy_avail<br/>(3c)]
     D --> E[Start supervisord]
-    E --> F[pyuheprng program\n(3d)]
-    E --> G[privatenesstools program\n(3e)]
+    E --> F[pyuheprng program<br/>(3d)]
+    E --> G[privatenesstools program<br/>(3e)]
 ```
 
 ```text
@@ -254,15 +248,15 @@ pyuheprng-privatenesstools Container Startup
 **Entry:** `ness-menu.sh`
 
 ```mermaid
-flowchart TD
-    M[ness-menu.sh menu()] --> S[start_stack()\n-> deploy-ness.sh]
+graph TD
+    M[ness-menu.sh menu()] --> S[start_stack()<br/>-> deploy-ness.sh]
     M --> H[health_check()]
     M --> T[stack_status()]
 
-    H --> HD[Docker services check\ncompose ps]
-    H --> HE[Privateness sync\nexplorer vs privateness-cli]
-    H --> HF[Emercoin sync\nexplorer vs emercoin-cli]
-    H --> DNS[DNS tests\nname_show + ping private.ness]
+    H --> HD[Docker services check<br/>compose ps]
+    H --> HE[Privateness sync<br/>explorer vs privateness-cli]
+    H --> HF[Emercoin sync<br/>explorer vs emercoin-cli]
+    H --> DNS[DNS tests<br/>name_show + ping private.ness]
 ```
 
 ```text
@@ -324,11 +318,11 @@ ness-menu.sh Interactive Management
 **Entry:** `dns-reverse-proxy/entrypoint.sh`
 
 ```mermaid
-flowchart TD
-    A[entrypoint.sh] --> B[wait_for_rpc()\n(getinfo)\n(5a)]
-    B --> C[fetch_nvs_config()\nname_show\n(5b)]
-    C --> D[Unescape JSON value\n(5c)]
-    D --> E[Start dns-reverse-proxy\nwith NVS args\n(5d)]
+graph TD
+    A[entrypoint.sh] --> B[wait_for_rpc()<br/>(getinfo)<br/>(5a)]
+    B --> C[fetch_nvs_config()<br/>name_show<br/>(5b)]
+    C --> D[Unescape JSON value<br/>(5c)]
+    D --> E[Start dns-reverse-proxy<br/>with NVS args<br/>(5d)]
 ```
 
 ```text
@@ -370,13 +364,13 @@ DNS Reverse Proxy Initialization Flow
 **Entry:** `build-all.sh`, `build-multiarch.sh`
 
 ```mermaid
-flowchart TD
-    A[build-all.sh] --> B[Define IMAGES order\n(6a)]
-    B --> C[Check context dirs\n(6b)]
-    C --> D[docker build per image\n(6c)]
+graph TD
+    A[build-all.sh] --> B[Define IMAGES order<br/>(6a)]
+    B --> C[Check context dirs<br/>(6b)]
+    C --> D[docker build per image<br/>(6c)]
 
-    E[build-multiarch.sh] --> F[Setup buildx builder\n(6d)]
-    F --> G[buildx build\namd64/arm64/armv7\n(6e)]
+    E[build-multiarch.sh] --> F[Setup buildx builder<br/>(6d)]
+    F --> G[buildx build<br/>amd64/arm64/armv7<br/>(6e)]
 ```
 
 ```text
@@ -423,15 +417,15 @@ Multi-Architecture Image Build Pipeline
 **Entry:** `privateness/Dockerfile`, `privateness/entrypoint.sh`
 
 ```mermaid
-flowchart TD
-    A[Privateness Dockerfile] --> B[Clone ness repo\n(7a)]
-    B --> C[Build privateness binary\n(7b)]
+graph TD
+    A[Privateness Dockerfile] --> B[Clone ness repo<br/>(7a)]
+    B --> C[Build privateness binary<br/>(7b)]
     B --> D[Build privateness-cli]
-    C --> E[Copy binaries & set healthcheck\n(7c)]
+    C --> E[Copy binaries & set healthcheck<br/>(7c)]
 
     E --> F[entrypoint.sh]
     F --> G[Show config banner]
-    G --> H[Start privateness daemon\n(7d)]
+    G --> H[Start privateness daemon<br/>(7d)]
 
     EMC[emercoin-core] --> H
     DNS[dns-reverse-proxy] --> H
@@ -484,15 +478,15 @@ Privateness Blockchain Node Build & Initialization
 **Entry:** `ipfs/entrypoint.sh`
 
 ```mermaid
-flowchart TD
-    A[entrypoint.sh] --> B[Check $IPFS_PATH/config\n(8a)]
-    B --> C[ipfs init --profile=server\n(8b)]
+graph TD
+    A[entrypoint.sh] --> B[Check $IPFS_PATH/config<br/>(8a)]
+    B --> C[ipfs init --profile=server<br/>(8b)]
     C --> D[Configure API/Gateway]
-    D --> E[Enable experimental features\n(8c)]
-    E --> F[Set StorageMax\n(8d)]
+    D --> E[Enable experimental features<br/>(8c)]
+    E --> F[Set StorageMax<br/>(8d)]
     F --> G[Configure GC period]
     G --> H[ipfs id]
-    H --> I[Start ipfs daemon\n--migrate --enable-gc\n(8e)]
+    H --> I[Start ipfs daemon<br/>--migrate --enable-gc<br/>(8e)]
 ```
 
 ```text
@@ -544,11 +538,11 @@ IPFS Daemon Initialization Flow
 **Entry:** `portainer-deploy.sh`, `portainer-stack.yml`
 
 ```mermaid
-flowchart TD
-    A[portainer-deploy.sh] --> B[Check API status\n(9a)]
-    B --> C[Query existing stacks\n(9b)]
-    C -->|exists| D[Update stack\nPUT /api/stacks/{id}\n(9c)]
-    C -->|missing| E[Create stack\nPOST /api/stacks\n(9d)]
+graph TD
+    A[portainer-deploy.sh] --> B[Check API status<br/>(9a)]
+    B --> C[Query existing stacks<br/>(9b)]
+    C --> D[Update stack<br/>PUT /api/stacks/{id}<br/>(9c)]
+    C --> E[Create stack<br/>POST /api/stacks<br/>(9d)]
     D --> F[Wait & verify deployment]
     E --> F
 ```
@@ -596,8 +590,8 @@ Portainer API Stack Deployment Flow
 **Entry:** `docker-compose.yml`
 
 ```mermaid
-flowchart TB
-    EMC[Emercoin Core\nfoundation]:::foundation
+graph TB
+    EMC[Emercoin Core<br/>foundation]:::foundation
     YGG[Yggdrasil]:::network
     DNS[DNS Reverse Proxy]:::network
     I2P[I2P-Yggdrasil]:::network
@@ -630,11 +624,11 @@ flowchart TB
     PTOOLS --> NET
     PNUM --> NET
 
-    classDef foundation fill=#1f2937,color=#fff;
-    classDef network fill=#1d4ed8,color=#fff;
-    classDef service fill=#0f766e,color=#fff;
-    classDef app fill=#7c2d12,color=#fff;
-    classDef infra fill=#4b5563,color=#fff;
+    classDef foundation fill:#1f2937,color:#fff;
+    classDef network fill:#1d4ed8,color:#fff;
+    classDef service fill:#0f766e,color:#fff;
+    classDef app fill:#7c2d12,color:#fff;
+    classDef infra fill:#4b5563,color:#fff;
 ```
 
 ```text

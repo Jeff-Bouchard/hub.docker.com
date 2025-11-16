@@ -1,5 +1,7 @@
 # Réseau Privateness – Architecture intraçable
 
+[English](NETWORK-ARCHITECTURE.md)
+
 ## Hopping multi‑couches de protocoles
 
 La pile privateness.network utilise un **hopping de protocoles** sur plusieurs couches, ce qui la rend **impossible à suivre ou tracer**.

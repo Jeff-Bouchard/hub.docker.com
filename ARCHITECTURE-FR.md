@@ -1,5 +1,7 @@
 # Prise en charge multi-architecture
 
+[English](ARCHITECTURE.md)
+
 Toutes les images Docker prennent en charge plusieurs architectures CPU pour une compatibilité maximale.
 
 ## Plates-formes prises en charge

@@ -1,5 +1,7 @@
 # Guide de déploiement Portainer
 
+[English](PORTAINER.md)
+
 Déployer et gérer toute la pile Privateness Network via Portainer.
 
 ## Prérequis

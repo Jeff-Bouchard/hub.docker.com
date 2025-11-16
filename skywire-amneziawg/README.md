@@ -1,5 +1,7 @@
 # Skywire-AmneziaWG Access Layer
 
+[Français](README-FR.md)
+
 AmneziaWG provides the **access layer** with stealth VPN capabilities, connecting clients directly to the Skywire mesh network.
 
 ## Architecture

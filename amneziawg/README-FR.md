@@ -1,5 +1,7 @@
 # AmneziaWG - VPN WireGuard furtif
 
+[English](README.md)
+
 AmneziaWG est la couche d’accès furtive du réseau Privateness : une variante du protocole WireGuard avec une obfuscation avancée pour contourner la DPI (Deep Packet Inspection) et la censure dans des environnements ouvertement hostiles.
 
 ## Fonctionnalités

@@ -1,5 +1,7 @@
 # I2P avec routage Yggdrasil
 
+[English](README.md)
+
 Ce conteneur exécute I2P (Invisible Internet Project) avec tout le trafic routé via le réseau maillé Yggdrasil.
 
 ## Fonctionnement

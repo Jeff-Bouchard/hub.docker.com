@@ -1,5 +1,7 @@
 # Concept Perception → Réalité
 
+[English](CONCEPT.md)
+
 1. **EmerDNS + EmerNVS** (`dpo:PrivateNESS.Network`, `ness:dns-reverse-proxy-config`) sont les seules sources de vérité pour les identités, les informations de bootstrap, la politique DNS et les URL de service. Tout ce qui n’est pas atteignable à partir de ces enregistrements est considéré comme non fiable par défaut.
 2. **L’application de la politique DNS** est assurée par `dns-reverse-proxy` sur `127.0.0.1:53/udp`, qui route les TLD possédés par Emer vers EmerDNS (`127.0.0.1:5335`) et, en option, ne relaie les TLD « monde » que via des serveurs amont de confiance.
 3. **Le commutateur d’existence clearnet** permet de passer d’un univers hybride (EmerDNS + DNS mondial) à un cosmos Emer-only où les domaines non Emer renvoient NXDOMAIN/sont mis en trou noir et n’existent plus efficacement.

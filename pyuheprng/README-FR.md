@@ -1,5 +1,7 @@
 # pyuheprng – Service d’entropie cryptographique
 
+[English](README.md)
+
 ## Universal Hardware Entropy Protocol Random Number Generator
 
 Composant d’infrastructure qui alimente directement `/dev/random` avec une entropie cryptographiquement sûre issue de plusieurs sources, pour que tout le reste de la pile soit soit sûr, soit bloqué.

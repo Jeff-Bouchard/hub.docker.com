@@ -1,5 +1,7 @@
 # IPFS Daemon - Decentralized Storage
 
+[Français](README-FR.md)
+
 InterPlanetary File System (IPFS) daemon for decentralized content-addressed storage.
 
 ## Features

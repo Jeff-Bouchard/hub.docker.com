@@ -1,5 +1,7 @@
 # pyuheprng + privatenesstools Combined Container
 
+[Français](README-FR.md)
+
 Combined container running both:
 - **pyuheprng**: Cryptographic entropy service (port 5000)
 - **privatenesstools**: Network utilities (port 8888)

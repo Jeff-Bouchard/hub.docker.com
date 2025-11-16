@@ -3,6 +3,8 @@
 Images Docker prêtes pour la production, conçues pour des environnements hostiles (Umbrel, bare metal, clusters).
 Vous ne déployez pas une « app », vous déployez un composant d’infrastructure de sécurité.
 
+[English](README.md)
+
 ## ⚠️ AVERTISSEMENT DE SÉCURITÉ CRITIQUE
 
 **Ce système PRÉFÈRE BLOQUER plutôt qu’exécuter une opération cryptographique non sûre.** C’est un choix de conception, pas un bug.
@@ -15,7 +17,7 @@ La possibilité de privation d’entropie est **ÉLIMINÉE** grâce au service `
 
 **Pour les machines non‑Windows** : la configuration GRUB **DOIT** désactiver `/dev/urandom` en production. Si cela vous semble excessif, ce projet n’est probablement pas aligné avec vos exigences de sécurité.
 
-Voir [CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md) pour tous les détails.
+Voir [CRYPTOGRAPHIC-SECURITY-FR.md](CRYPTOGRAPHIC-SECURITY-FR.md) pour tous les détails.
 
 ## ⚠️ EXIGENCE D’ÉQUIVALENCE BINAIRE
 
@@ -28,7 +30,7 @@ Une vraie décentralisation exige que chaque nœud exécute des **binaires ident
 - Impossible de faire confiance au consensus réseau
 - **La décentralisation est factice**
 
-Voir [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) pour les détails d’implémentation.
+Voir [REPRODUCIBLE-BUILDS-FR.md](REPRODUCIBLE-BUILDS-FR.md) pour les détails d’implémentation.
 
 ### Principe de conception – Sun Tzu
 
@@ -42,28 +44,28 @@ Ce projet applique ce principe : on ne parie pas sur l’absence d’attaquant ;
 
 ### Documentation cœur
 
-- **[SERVICES.md](SERVICES.md)** – Liste complète des services, dépendances, ports, cas d’usage
-- **[DEPLOY.md](DEPLOY.md)** – Instructions de déploiement Docker Hub (nessnetwork)
-- **[PORTAINER.md](PORTAINER.md)** – Guide de déploiement Portainer, gestion de stack
+- **[SERVICES-FR.md](SERVICES-FR.md)** – Liste complète des services, dépendances, ports, cas d’usage
+- **[DEPLOY-FR.md](DEPLOY-FR.md)** – Instructions de déploiement Docker Hub (nessnetwork)
+- **[PORTAINER-FR.md](PORTAINER-FR.md)** – Guide de déploiement Portainer, gestion de stack
 
 ### Architecture de sécurité
 
-- **[CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md)** – Architecture d’entropie, pyuheprng, configuration GRUB
-- **[REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md)** – Équivalence binaire, builds déterministes, vérification
-- **[INCENTIVE-SECURITY.md](INCENTIVE-SECURITY.md)** – Paiements sans confiance à des nœuds hostiles, théorie des jeux
+- **[CRYPTOGRAPHIC-SECURITY-FR.md](CRYPTOGRAPHIC-SECURITY-FR.md)** – Architecture d’entropie, pyuheprng, configuration GRUB
+- **[REPRODUCIBLE-BUILDS-FR.md](REPRODUCIBLE-BUILDS-FR.md)** – Équivalence binaire, builds déterministes, vérification
+- **[INCENTIVE-SECURITY-FR.md](INCENTIVE-SECURITY-FR.md)** – Paiements sans confiance à des nœuds hostiles, théorie des jeux
 
 ### Architecture réseau
 
-- **[NETWORK-ARCHITECTURE.md](NETWORK-ARCHITECTURE.md)** – Hopping de protocoles, routage MPLS, intraçabilité
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** – Détails de build multi‑architecture
+- **[NETWORK-ARCHITECTURE-FR.md](NETWORK-ARCHITECTURE-FR.md)** – Hopping de protocoles, routage MPLS, intraçabilité
+- **[ARCHITECTURE-FR.md](ARCHITECTURE-FR.md)** – Détails de build multi‑architecture
 
 ### Documentation par service
 
-- **[ipfs/README.md](ipfs/README.md)** – Démon IPFS, intégration Emercoin
-- **[pyuheprng/README.md](pyuheprng/README.md)** – Documentation du service d’entropie
-- **[amneziawg/README.md](amneziawg/README.md)** – Configuration du VPN furtif
-- **[skywire-amneziawg/README.md](skywire-amneziawg/README.md)** – Intégration couche d’accès
-- **[CONCEPT.md](CONCEPT.md)** – Notes conceptuelles perception/réalité
+- **[ipfs/README-FR.md](ipfs/README-FR.md)** – Démon IPFS, intégration Emercoin
+- **[pyuheprng/README-FR.md](pyuheprng/README-FR.md)** – Documentation du service d’entropie
+- **[amneziawg/README-FR.md](amneziawg/README-FR.md)** – Configuration du VPN furtif
+- **[skywire-amneziawg/README-FR.md](skywire-amneziawg/README-FR.md)** – Intégration couche d’accès
+- **[CONCEPT-FR.md](CONCEPT-FR.md)** – Notes conceptuelles perception/réalité
 
 ## Concept Perception → Réalité
 
@@ -238,7 +240,7 @@ docker run -v ness-data:/data \
 # Stacks → Add Stack → Upload portainer-stack.yml
 ```
 
-Voir [PORTAINER.md](PORTAINER.md) pour le guide complet.
+Voir [PORTAINER-FR.md](PORTAINER-FR.md) pour le guide complet.
 
 ### Déploiement rapide – stack essentielle Ness
 
@@ -290,7 +292,7 @@ docker-compose -f docker-compose.minimal.yml up -d
 
 ## Vue d’ensemble de l’architecture réseau
 
-**Protocol hopping intraçable** : voir [NETWORK-ARCHITECTURE.md](NETWORK-ARCHITECTURE.md).
+**Protocol hopping intraçable** : voir [NETWORK-ARCHITECTURE-FR.md](NETWORK-ARCHITECTURE-FR.md).
 
 Flux de trafic : `AmneziaWG (obfusqué) → Skywire (MPLS) → Yggdrasil (IPv6) → I2P (garlic) → DNS blockchain`.
 

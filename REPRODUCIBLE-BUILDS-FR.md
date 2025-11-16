@@ -1,5 +1,7 @@
 # Builds reproductibles – Équivalence binaire
 
+[English](REPRODUCIBLE-BUILDS.md)
+
 ## ⚠️ EXIGENCE CRITIQUE
 
 **Tous les nœuds DOIVENT être binaires équivalents, sinon la « décentralisation » est du bullshit.**
