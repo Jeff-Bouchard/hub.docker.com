@@ -141,7 +141,7 @@ ENV PYTHONHASHSEED=0
 The Dockerfile fragments in this section describe a **hardened, reproducible build profile** for the Privateness Network stack. They are intended as **reference designs / target implementations**:
 
 - Some current Dockerfiles in this repo are still simpler (e.g. `FROM emercoin/core:latest`).
-- Use these snippets as the **spec you converge to** when you want full binary equivalence guarantees.
+- Use these snippets as the **spec you converge to** when you want strong binary equivalence properties that your tooling can check.
 
 Where there is any difference between these examples and the live Dockerfiles, **these examples describe the desired end state**, not an already‑achieved one.
 

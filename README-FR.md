@@ -5,32 +5,31 @@ Vous ne déployez pas une « app », vous déployez un composant d’infrastruct
 
 [English](README.md)
 
-## ⚠️ AVERTISSEMENT DE SÉCURITÉ CRITIQUE
+## Comportement de sécurité (profil expérimental)
 
-**Ce système PRÉFÈRE BLOQUER plutôt qu’exécuter une opération cryptographique non sûre.** C’est un choix de conception, pas un bug.
+Ce projet propose un profil où certains traitements cryptographiques **préfèrent bloquer** plutôt que de continuer si l’entropie semble insuffisante. C’est un choix de conception volontaire, destiné aux environnements qui acceptent de sacrifier de la disponibilité pour renforcer la gestion de l’aléa.
 
-La possibilité de privation d’entropie est **ÉLIMINÉE** grâce au service `pyuheprng` qui alimente directement `/dev/random` avec un mélange contrôlé de sources, de façon stricte et mesurable :
+Sur des hôtes Linux correctement configurés, le service `pyuheprng` alimente `/dev/random` avec un mélange contrôlé de sources :
 
 - **RC4OK depuis Emercoin Core** (aléa dérivé de la blockchain)
 - **Bits matériels bruts** (entropie matérielle directe)
 - **Protocole UHEP** (Universal Hardware Entropy Protocol)
 
-**Pour les machines non‑Windows** : la configuration GRUB **DOIT** désactiver `/dev/urandom` en production. Si cela vous semble excessif, ce projet n’est probablement pas aligné avec vos exigences de sécurité.
+Pour ce profil, la configuration GRUB désactive la confiance explicite dans `/dev/urandom` pour la cryptographie et privilégie `/dev/random`. Il s’agit d’une politique **plus conservatrice que la pratique Linux standard**, à évaluer selon vos besoins ; ce n’est pas un jugement global sur `/dev/urandom`.
 
-Voir [CRYPTOGRAPHIC-SECURITY-FR.md](CRYPTOGRAPHIC-SECURITY-FR.md) pour tous les détails.
+Voir [CRYPTOGRAPHIC-SECURITY-FR.md](CRYPTOGRAPHIC-SECURITY-FR.md) et `SOURCES.md` pour tous les détails et références externes.
 
-## ⚠️ EXIGENCE D’ÉQUIVALENCE BINAIRE
+## Équivalence binaire (objectif de conception)
 
-**Tous les nœuds DOIVENT être binaires équivalents, sinon c’est du bullshit.** C’est la différence entre un réseau réellement décentralisé et un décor marketing.
+L’équivalence binaire est traitée comme un **objectif important** pour les déploiements réellement décentralisés : chaque nœud devrait pouvoir vérifier qu’il exécute le même binaire que ses pairs.
 
-Une vraie décentralisation exige que chaque nœud exécute des **binaires identiques** vérifiables. Sans équivalence binaire :
+Sans builds reproductibles et sans comparaison de hash, il devient plus difficile de :
 
-- Impossible de vérifier l’intégrité des nœuds
-- Impossible de détecter les nœuds compromis
-- Impossible de faire confiance au consensus réseau
-- **La décentralisation est factice**
+- Vérifier l’intégrité des nœuds
+- Détecter des binaires compromis ou modifiés
+- Avoir confiance dans le comportement global du réseau
 
-Voir [REPRODUCIBLE-BUILDS-FR.md](REPRODUCIBLE-BUILDS-FR.md) pour les détails d’implémentation.
+Voir [REPRODUCIBLE-BUILDS-FR.md](REPRODUCIBLE-BUILDS-FR.md) pour les profils de build de référence et les idées de vérification.
 
 ### Principe de conception – Sun Tzu
 
@@ -292,14 +291,17 @@ docker-compose -f docker-compose.minimal.yml up -d
 
 ## Vue d’ensemble de l’architecture réseau
 
-**Protocol hopping intraçable** : voir [NETWORK-ARCHITECTURE-FR.md](NETWORK-ARCHITECTURE-FR.md).
+Voir [NETWORK-ARCHITECTURE-FR.md](NETWORK-ARCHITECTURE-FR.md) pour une description détaillée. À haut niveau, un flux typique peut ressembler à :
 
-Flux de trafic : `AmneziaWG (obfusqué) → Skywire (MPLS) → Yggdrasil (IPv6) → I2P (garlic) → DNS blockchain`.
+`AmneziaWG (obfusqué) → Skywire (MPLS) → Yggdrasil (IPv6) → I2P (garlic) → DNS blockchain`.
 
-- **Aucun routage IP dans le cœur** : Skywire utilise la commutation de labels MPLS
-- **5+ couches de chiffrement** : chaque protocole ajoute son propre chiffrement
-- **Sélection dynamique de chemin** : routes changeant par paquet
-- **Intraçable** : le hopping de protocoles casse toute tentative de suivi
+Quelques points de design :
+
+- **Pas de routage IP dans le cœur** : Skywire utilise la commutation de labels MPLS dans le mesh.
+- **Plusieurs couches de chiffrement** : chaque protocole apporte son propre chiffrement.
+- **Sélection de chemin dynamique** : les routes peuvent changer par paquet.
+
+L’objectif est d’**augmenter l’effort nécessaire** pour une analyse de trafic à grande échelle et pour un blocage simple, sans revendiquer une intraçabilité mathématiquement démontrée.
 
 ## Support multi‑architecture
 

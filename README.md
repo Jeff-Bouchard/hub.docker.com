@@ -6,32 +6,31 @@ Hypersimple Docker images for Umbrel app store integration.
 
 <a href="https://asciinema.org/a/QqGDvbbTYotxKn6ZKcSndUP7V" target="_blank"><img src="https://asciinema.org/a/QqGDvbbTYotxKn6ZKcSndUP7V.svg" /></a>
 
-## ⚠️ CRITICAL SECURITY ADVISORY
+## Security behaviour (experimental)
 
-**This system will BLOCK rather than perform an unsecure cryptographic operation.**
+This stack includes an experimental configuration where some cryptographic operations **block** if the system believes entropy may be insufficient. The intent is to favour perceived cryptographic safety over availability on hosts that opt into this profile.
 
-Entropy deprivation is **effectively eliminated on correctly configured hosts** by our `pyuheprng` service feeding `/dev/random` directly, mixed with:
+On correctly configured Linux hosts, the `pyuheprng` service feeds `/dev/random` directly with a mix of:
 
 *   **RC4OK from Emercoin Core** (blockchain-derived randomness)
 *   **Original hardware bits** (direct hardware entropy)
 *   **UHEP Protocol** (Universal Hardware Entropy Protocol)
 
-**For non-Windows machines**: GRUB configuration **MUST** disable `/dev/urandom` in production.
+For this profile, GRUB is configured to avoid trusting `/dev/urandom` for cryptographic material and to rely on `/dev/random` instead. This is a conservative choice specific to this project and **not** a general statement about `/dev/urandom` on Linux.
 
-See [CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md) for complete details.
+See [CRYPTOGRAPHIC-SECURITY.md](CRYPTOGRAPHIC-SECURITY.md) and the external references in `SOURCES.md` for details and background.
 
-## ⚠️ BINARY EQUIVALENCE REQUIREMENT
+## Binary equivalence (design goal)
 
-**All nodes MUST be binary equivalent, otherwise it's bullshit.**
+This project treats **binary equivalence** as an important design goal for decentralised deployments: every node should be able to verify that it is running the same code as its peers.
 
-True decentralization requires every node to run **identical binaries** that can be verified. Without binary equivalence:
+Without reproducible builds and a way to compare hashes, it becomes harder to:
 
-*   Cannot verify node integrity
-*   Cannot detect compromised nodes
-*   Cannot trust network consensus
-*   **Decentralization is fake**
+*   Verify node integrity
+*   Detect compromised or modified nodes
+*   Build confidence in the behaviour of the network
 
-See [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) for implementation details.
+See [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) for the reference build profiles and verification ideas.
 
 ## Documentation
 
@@ -285,14 +284,17 @@ docker-compose -f docker-compose.minimal.yml up -d
 
 ## Network Architecture
 
-**Untraceable Protocol Hopping**: See [NETWORK-ARCHITECTURE.md](NETWORK-ARCHITECTURE.md)
+See [NETWORK-ARCHITECTURE.md](NETWORK-ARCHITECTURE.md) for a detailed description. At a high level, traffic can flow as:
 
-Traffic flow: `AmneziaWG (obfuscated) → Skywire (MPLS) → Yggdrasil (IPv6) → I2P (garlic) → Blockchain DNS`
+`AmneziaWG (obfuscated) → Skywire (MPLS-style mesh) → Yggdrasil (IPv6) → I2P (garlic) → Blockchain DNS`
 
-*   **No IP routing in core**: Skywire uses MPLS label switching
-*   **5+ encryption layers**: Each protocol adds encryption
-*   **Dynamic path selection**: Routes change per packet
-*   **Extremely hard to trace in practice**: Protocol hopping forces an attacker to defeat or monitor every layer simultaneously
+Some design aspects:
+
+*   **Reduced IP visibility in core**: Skywire uses label-based forwarding in the mesh core instead of ordinary IP routing.
+*   **Multiple encryption layers**: Each protocol adds its own encryption.
+*   **Dynamic path selection**: Routes can change per packet.
+
+The goal is to **increase the effort required** for large-scale traffic analysis and simple blocking, not to claim mathematically proven untraceability.
 
 ## Multi-Architecture Support
 

@@ -16,7 +16,8 @@ echo "=========================================="
 # Start Privateness daemon
 echo "Starting Privateness blockchain node..."
 exec privateness \
-    -data-dir=.privateness/data \
-    -web-interface-addr=0.0.0.0:6006 \
-    -rpc-interface-addr=0.0.0.0:6660 \
+    -enable-gui=false \
+    -launch-browser=false \
+    -log-level=debug \
+    -disable-pex \
     "$@"

@@ -4,7 +4,7 @@
 
 AmneziaWG provides the **access layer** with stealth VPN capabilities, connecting clients directly to the Skywire mesh network.
 
-## Architecture
+## Architecture (experimental)
 
 ```text
 Client Device (TCP/IP)
@@ -20,15 +20,15 @@ I2P Anonymous Network (Layered Encryption)
 Privateness Services / Internet
 ```
 
-### Why This Is Untraceable
+### How this aims to hinder tracking
 
 1. **Protocol Hopping**: TCP/IP → UDP → MPLS → IPv6 → Garlic Routing
-2. **No IP in Core**: Skywire MPLS uses label switching in the mesh core instead of ordinary IP routing
+2. **Reduced IP visibility in core**: Skywire MPLS uses label switching in the mesh core instead of ordinary IP routing
 3. **Network Hopping**: Dynamic path selection, changes per packet
 4. **Encryption Layers**: 5+ layers of encryption
-5. **Decentralized**: No central servers to monitor
+5. **Decentralized**: No single central server for all traffic
 
-**Result**: Extremely hard in practice to track or trace network activity across all layers simultaneously
+These design choices are intended to make network activity harder to analyse across all layers at once. There are **no formal anonymity proofs**, and the actual privacy properties depend on how the system is deployed and used.
 
 ## Traffic Flow
 

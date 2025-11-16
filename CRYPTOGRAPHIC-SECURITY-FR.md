@@ -1,4 +1,4 @@
-# Sécurité cryptographique – Garantie d’entropie
+# Sécurité cryptographique – Design d’entropie (expérimental)
 
 [English](CRYPTOGRAPHIC-SECURITY.md)
 
@@ -22,18 +22,18 @@ Le service `pyuheprng` fournit une **entropie cryptographiquement sûre** en ali
 
 ### Prévention de la privation d’entropie
 
-**La possibilité de privation d’entropie est ÉLIMINÉE** grâce à :
+Sur des hôtes correctement configurés, ce design vise à **réduire fortement le risque de privation d’entropie** grâce à :
 
-- **Alimentation continue** : pyuheprng alimente constamment `/dev/random`.
+- **Alimentation continue** : pyuheprng alimente `/dev/random` en continu.
 - **Sources multiples** : RC4OK + bits matériels + UHEP.
-- **Aucun repli vers un RNG faible** : le système bloque si l’entropie est insuffisante.
-- **Accès direct à `/dev/random`** : contourne l’estimation d’entropie du noyau.
+- **Aucun repli volontaire vers un RNG jugé faible** : le système bloque si l’entropie semble insuffisante.
+- **Accès direct à `/dev/random`** : alimente directement le pool d’entropie du noyau.
 
-### /dev/urandom est DÉSACTIVÉ
+### Politique sur `/dev/urandom`
 
-**CRITIQUE** : `/dev/urandom` est désactivé via la configuration GRUB pour empêcher les opérations cryptographiques faibles.
+Dans ce projet, `/dev/urandom` est désactivé via la configuration GRUB pour éviter qu’il ne soit utilisé comme source d’aléa pour la cryptographie **dans ce profil précis**.
 
-`/dev/urandom` renvoie des données aléatoires même lorsque le pool d’entropie est épuisé, ce qui est **cryptographiquement non sûr**.
+La documentation du RNG Linux (`random(4)`) indique que `/dev/urandom` est prévu pour être adapté à la plupart des usages cryptographiques une fois le pool initialisé. La configuration proposée ici est donc **plus conservatrice que la pratique courante** et peut introduire davantage de blocages sans nécessairement convenir à tous les environnements.
 
 ## Configuration GRUB (obligatoire en production)
 
@@ -146,42 +146,40 @@ with open('/dev/random', 'wb') as random_dev:
     random_dev.write(mixed_entropy)
 ```
 
-## Garanties de sécurité
+## Propriétés de sécurité (objectifs de conception)
 
-### 1. Pas d’aléa faible
+### 1. Réduction de l’aléa faible
 
-**GARANTI** : le système n’utilise jamais un aléa faible ou prévisible.
+Le système est **conçu** pour éviter autant que possible l’utilisation d’un aléa faible ou facilement prévisible, sur un hôte correctement configuré :
 
-- `/dev/urandom` désactivé (pas de repli avec pool épuisé)
-- pyuheprng se bloque si les sources sont indisponibles
-- Les opérations cryptographiques s’arrêtent sans entropie suffisante
+- `/dev/urandom` est évité pour la crypto dans ce profil.
+- pyuheprng se bloque si les sources configurées sont indisponibles.
+- Certaines opérations cryptographiques s’arrêtent si l’entropie semble insuffisante.
 
-### 2. Entropie continue
+### 2. Entropie continue (objectif)
 
-**GARANTI** : le pool d’entropie ne se vide jamais.
+L’architecture **vise** à ce que le pool d’entropie ne se vide pas en fonctionnement normal sur un hôte correctement configuré :
 
-- pyuheprng alimente `/dev/random` en continu
-- Multiples sources indépendantes
-- Basculement automatique entre les sources
-- Supervision de santé et alertes
+- pyuheprng alimente `/dev/random` en continu.
+- Multiples sources indépendantes sont combinées.
+- Un basculement simple et une supervision de santé sont en place.
 
-### 3. Robustesse cryptographique
+### 3. Robustesse cryptographique (hypothèses)
 
-**GARANTI** : toute l’entropie est cryptographiquement sûre.
+La robustesse dépend des primitives sous‑jacentes, supposées sûres selon leur propre documentation :
 
-- RC4OK : aléa dérivé de la blockchain (imprévisible)
-- Bits matériels : aléa physique
-- UHEP : sources matérielles validées
-- Mixage SHA‑512 : combinaison cryptographique
+- RC4OK : aléa dérivé de la blockchain (Emercoin), supposé imprévisible selon les spécifications Emercoin.
+- Bits matériels : aléa physique issu de périphériques RNG, CPU, TPM, etc.
+- UHEP : composition et agrégation de ces sources matérielles.
+- Mixage SHA‑512 : combinaison cryptographique des entrées.
 
-### 4. Aucune confiance implicite dans le CPU / bootloader
+### 4. Réduction de la confiance implicite dans CPU / bootloader
 
-**GARANTI** : aucune confiance implicite dans le matériel.
+La configuration cherche à **réduire** la confiance implicite dans le RNG du CPU ou du bootloader comme source unique :
 
-- GRUB désactive la confiance CPU (`random.trust_cpu=off`)
-- GRUB désactive la confiance bootloader (`random.trust_bootloader=off`)
-- Toutes les sources d’entropie sont validées
-- Supervision de santé continue
+- GRUB désactive la confiance CPU (`random.trust_cpu=off`).
+- GRUB désactive la confiance bootloader (`random.trust_bootloader=off`).
+- Les sources d’entropie sont combinées et soumises à des contrôles de santé basiques, sans certification formelle.
 
 ## Supervision
 
@@ -255,7 +253,7 @@ STATUS: pyuheprng feeding entropy
 rngd -r /dev/urandom -o /dev/random
 ```
 
-**NE JAMAIS utiliser en production** – annule les garanties de sécurité.
+**NE JAMAIS utiliser en production** – annule les propriétés de sécurité recherchées par cette configuration.
 
 ## Intégration dans l’architecture
 
@@ -307,12 +305,12 @@ services:
 
 | Aspect | Linux standard | Privateness Network |
 |--------|----------------|---------------------|
-| /dev/urandom | Activé (potentiellement non sûr) | **DÉSACTIVÉ** |
-| Épuisement d’entropie | Possible | **IMPOSSIBLE** |
-| Aléa faible | Possible | **BLOQUÉ** |
-| Sources d’entropie | CPU, bootloader (présumés fiables) | RC4OK + Matériel + UHEP (validés) |
-| Comportement en blocage | Évitée | **IMPOSÉE** |
-| Garantie de sécurité | Best effort | **ABSOLUE** |
+| /dev/urandom | Activé (potentiellement utilisé pour la crypto) | Politique locale : évité pour la crypto dans ce profil |
+| Épuisement d’entropie | Possible | Conçu pour être peu probable en fonctionnement normal |
+| Aléa faible | Possible | Les opérations sensibles sont bloquées si l’entropie semble insuffisante |
+| Sources d’entropie | CPU, bootloader (présumés fiables) | RC4OK + Matériel + UHEP (combinaison validée localement) |
+| Comportement en blocage | Souvent évité | Accepté comme coût de sécurité dans ce design |
+| Modèle de sécurité | Best effort | Dépend du déploiement correct et des hypothèses sur les primitives |
 
 ### Pourquoi c’est important
 
@@ -323,7 +321,7 @@ services:
 - Détournement de session
 - Contournement d’authentification
 
-**Privateness Network élimine totalement ce risque.**
+Le design de Privateness Network **vise à réduire fortement ce risque sur l’hôte local**, mais ne supprime pas toutes les possibilités d’erreur de configuration ou d’attaques inédites.
 
 ## Analyse technique approfondie
 
@@ -407,15 +405,17 @@ class UHEP:
 
 ## Conclusion
 
-**Privateness Network fournit une sécurité cryptographique maximale** :
+Ce document décrit un design d’entropie qui **cherche à durcir la production d’aléa** pour les opérations sensibles :
 
-1. ✅ **Pas d’aléa faible** : le système bloque plutôt que de continuer de manière non sûre.
-2. ✅ **Pas de privation d’entropie** : pyuheprng alimente `/dev/random` en continu.
-3. ✅ **Sources multiples** : RC4OK + Matériel + UHEP.
-4. ✅ **/dev/urandom désactivé** : la configuration GRUB interdit tout repli faible.
-5. ✅ **Entropie validée** : supervision continue de la santé.
-6. ✅ **Aléa vérifié par blockchain** : RC4OK d’Emercoin fournit un aléa prouvé.
+1. Il tente d’éviter l’utilisation d’un aléa manifestement faible en bloquant certaines opérations.
+2. Il essaie de maintenir un flux continu vers `/dev/random` via plusieurs sources.
+3. Il combine RC4OK, des sources matérielles et UHEP pour diversifier l’entropie.
+4. Il applique une politique locale stricte sur `/dev/urandom` dans ce profil.
+5. Il fournit une supervision de base de l’état du générateur.
+6. Il s’appuie sur Emercoin pour une partie de l’aléa, en héritant des propriétés de sécurité de cette blockchain.
 
-**C’est l’architecture d’entropie la plus sûre possible.**
+Il s’agit d’un **design expérimental**, pas d’une preuve de sécurité absolue. Il n’a pas été audité par des cryptographes indépendants. Pour toute utilisation en production, il est recommandé de :
 
-Pour un déploiement en production, la **configuration GRUB est obligatoire** pour désactiver `/dev/urandom`.
+- Vérifier soigneusement la configuration de l’hôte.
+- Prendre connaissance de la documentation du RNG Linux (`random(4)`).
+- Considérer ce profil comme une base de réflexion, pas comme un remplacement automatique des configurations RNG standards.
