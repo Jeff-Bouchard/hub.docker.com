@@ -10,7 +10,7 @@ Privateness Network's native blockchain - the foundation of the decentralized ec
 - **Smarter contracts**: Decentralized application platform
 - **Fast finality**: Quick transaction confirmation
 - **Low fees**: Minimal transaction costs
-- **Interoperability**: Works with Emercoin for dual-chain security
+- **Interoperability (design)**: Architecture is designed to interoperate with Emercoin for dual-chain security, as described in the dual-chain model below
 
 ## Deployment
 
@@ -176,17 +176,19 @@ console.log(`Chain: ${info.chain}`);
 
 ## Integration with Privateness Network
 
-### Dual-Chain Architecture
+### Dual-Chain Architecture (Target Model)
 
-Ness blockchain works alongside Emercoin for enhanced security:
+Ness blockchain is intended to work alongside Emercoin for enhanced security in a **dual-chain model**:
 
 ```text
 Ness Blockchain (Native)
     ↓
 Emercoin (Established security)
     ↓
-Combined consensus
+Combined security properties (dual-chain model)
 ```
+
+This section describes the **target architecture** for cross-chain security; the exact bridging and consensus integration may evolve over time and should be validated against the current node and protocol implementation.
 
 ### Use Cases
 

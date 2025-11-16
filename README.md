@@ -10,7 +10,7 @@ Hypersimple Docker images for Umbrel app store integration.
 
 **This system will BLOCK rather than perform an unsecure cryptographic operation.**
 
-Entropy deprivation possibility is **ELIMINATED** by our `pyuheprng` service feeding `/dev/random` directly, mixed with:
+Entropy deprivation is **effectively eliminated on correctly configured hosts** by our `pyuheprng` service feeding `/dev/random` directly, mixed with:
 
 *   **RC4OK from Emercoin Core** (blockchain-derived randomness)
 *   **Original hardware bits** (direct hardware entropy)
@@ -292,7 +292,7 @@ Traffic flow: `AmneziaWG (obfuscated) → Skywire (MPLS) → Yggdrasil (IPv6) �
 *   **No IP routing in core**: Skywire uses MPLS label switching
 *   **5+ encryption layers**: Each protocol adds encryption
 *   **Dynamic path selection**: Routes change per packet
-*   **Impossible to trace**: Protocol hopping defeats all tracking
+*   **Extremely hard to trace in practice**: Protocol hopping forces an attacker to defeat or monitor every layer simultaneously
 
 ## Multi-Architecture Support
 

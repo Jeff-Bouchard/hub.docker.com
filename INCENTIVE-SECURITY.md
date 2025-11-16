@@ -14,6 +14,8 @@ This is the fundamental problem of decentralized networks:
 
 **Solution: Binary equivalence + cryptographic verification = trustless incentives**
 
+This document describes a **reference incentive model** for privateness.network: it shows how binary manifests, challenge–response and smarter contracts **can** be wired so that even hostile nodes are economically forced to behave. It is a **design baseline / target profile**, not a claim that every class and RPC below is already deployed on mainnet today.
+
 ## The Problem Without Binary Equivalence
 
 ### Scenario: Hostile Node Operator
@@ -464,6 +466,8 @@ Rational choice: Legitimate (more profitable)
 
 ### Privateness Network Incentive Structure
 
+The following parameters are **illustrative**, showing what a rational incentive schedule *could* look like when this model is fully wired into production. Values are examples, not a published tariff table.
+
 ```
 Service: Skywire Mesh Routing
 Payment: 0.001 EMC per GB routed
@@ -488,10 +492,10 @@ Result: Legitimate routing more profitable
 
 **Binary equivalence + cryptographic verification = ability to securely reward hostile nodes**
 
-This solves the fundamental problem of decentralized networks:
+This model is designed to solve the fundamental problem of decentralized networks:
 - ✅ Don't need to trust node operators
 - ✅ Can verify they're running legitimate code
-- ✅ Can pay them for work without risk
+- ✅ Can pay them for work with risk constrained by cryptographic verification instead of blind trust
 - ✅ Economic incentives align with network security
 - ✅ Even hostile actors contribute legitimately
 

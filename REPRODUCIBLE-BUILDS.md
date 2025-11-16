@@ -136,9 +136,16 @@ ENV TZ=UTC
 ENV PYTHONHASHSEED=0
 ```
 
-## Privateness Network Implementation
+## Privateness Network Implementation (Target Profile)
 
-### Emercoin Core
+The Dockerfile fragments in this section describe a **hardened, reproducible build profile** for the Privateness Network stack. They are intended as **reference designs / target implementations**:
+
+- Some current Dockerfiles in this repo are still simpler (e.g. `FROM emercoin/core:latest`).
+- Use these snippets as the **spec you converge to** when you want full binary equivalence guarantees.
+
+Where there is any difference between these examples and the live Dockerfiles, **these examples describe the desired end state**, not an already‑achieved one.
+
+### Emercoin Core (reference hardened build)
 
 ```dockerfile
 FROM debian:bullseye-20231009-slim@sha256:...
@@ -156,7 +163,7 @@ RUN echo "expected_sha256_hash  emercoin-${EMERCOIN_VERSION}-x86_64-linux-gnu.ta
 RUN sha256sum emercoind > /emercoin.hash
 ```
 
-### Skywire
+### Skywire (reference hardened build)
 
 ```dockerfile
 FROM golang:1.21.3-bullseye@sha256:...
@@ -181,7 +188,7 @@ RUN cd skywire && go build \
 RUN sha256sum /usr/local/bin/skywire-visor > /skywire.hash
 ```
 
-### pyuheprng
+### pyuheprng (reference hardened build)
 
 ```dockerfile
 FROM python:3.11.6-slim-bullseye@sha256:...

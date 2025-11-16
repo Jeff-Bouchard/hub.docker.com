@@ -1,4 +1,4 @@
-# Portainer Deployment Guide
+## Portainer Deployment Guide
 
 [Français](PORTAINER-FR.md)
 
@@ -6,27 +6,27 @@ Deploy and manage the entire Privateness Network stack via Portainer.
 
 ## Prerequisites
 
-1. **Portainer installed** (Community or Business Edition)
-2. **Docker Engine** with privileged mode support
-3. **Host requirements**:
-   - `/dev/net/tun` device available
-   - Kernel modules: `tun`, `amneziawg` (optional)
-   - Ports available: 53, 3000, 4444, 5000, 6661-6662, 6668, 7657, 8000-8001, 8053, 8080, 8775, 8888, 9001-9002, 51820-51821
+1.  **Portainer installed** (Community or Business Edition)
+2.  **Docker Engine** with privileged mode support
+3.  **Host requirements**:
+    *   `/dev/net/tun` device available
+    *   Kernel modules: `tun`, `amneziawg` (optional)
+    *   Ports available: 53, 3000, 4444, 5000, 6661-6662, 6668, 7657, 8000-8001, 8053, 8080, 8775, 8888, 9001-9002, 51820-51821
 
 ## Deployment Methods
 
 ### Method 1: Portainer UI (Recommended)
 
-1. **Login to Portainer** → Navigate to **Stacks**
-2. Click **Add Stack**
-3. **Name**: `privateness-network`
-4. **Build method**: Upload
-5. Upload `portainer-stack.yml`
-6. Click **Deploy the stack**
+1.  **Login to Portainer** → Navigate to **Stacks**
+2.  Click **Add Stack**
+3.  **Name**: `privateness-network`
+4.  **Build method**: Upload
+5.  Upload `portainer-stack.yml`
+6.  Click **Deploy the stack**
 
 ### Method 2: Portainer API
 
-```bash
+```plaintext
 curl -X POST "http://localhost:9000/api/stacks" \
   -H "X-API-Key: YOUR_API_KEY" \
   -F "Name=privateness-network" \
@@ -36,11 +36,11 @@ curl -X POST "http://localhost:9000/api/stacks" \
 
 ### Method 3: Git Repository
 
-1. **Stacks** → **Add Stack**
-2. **Build method**: Repository
-3. **Repository URL**: `https://github.com/ness-network/docker-hub`
-4. **Compose path**: `portainer-stack.yml`
-5. **Deploy**
+1.  **Stacks** → **Add Stack**
+2.  **Build method**: Repository
+3.  **Repository URL**: `https://github.com/ness-network/hub.docker.com`
+4.  **Compose path**: `portainer-stack.yml`
+5.  **Deploy**
 
 ## Stack Variants
 
@@ -48,38 +48,38 @@ curl -X POST "http://localhost:9000/api/stacks" \
 
 All 11 services - complete decentralized OSI stack
 
-- **RAM**: ~4GB minimum
-- **CPU**: 4+ cores recommended
-- **Disk**: 50GB+ for blockchain data
+*   **RAM**: ~4GB minimum
+*   **CPU**: 4+ cores recommended
+*   **Disk**: 20GB+ for blockchain data
 
 ### Minimal Stack (`portainer-stack-minimal.yml`)
 
 Core services only (Emercoin + Yggdrasil + Privateness)
 
-- **RAM**: ~1GB minimum
-- **CPU**: 2+ cores
-- **Disk**: 20GB+
+*   **RAM**: ~1GB minimum
+*   **CPU**: 2+ cores
+*   **Disk**: 20GB+
 
 ## Portainer Features
 
 ### Service Management
 
-- **Start/Stop/Restart** individual services
-- **View logs** in real-time
-- **Inspect** container details
-- **Execute commands** via web terminal
+*   **Start/Stop/Restart** individual services
+*   **View logs** in real-time
+*   **Inspect** container details
+*   **Execute commands** via web terminal
 
 ### Resource Monitoring
 
-- CPU/Memory usage per service
-- Network traffic statistics
-- Volume usage tracking
+*   CPU/Memory usage per service
+*   Network traffic statistics
+*   Volume usage tracking
 
 ### Stack Labels
 
 All services tagged with:
 
-```yaml
+```plaintext
 labels:
   - "io.portainer.accesscontrol.teams=privateness"
   - "com.privateness.service=<service-name>"
@@ -88,16 +88,16 @@ labels:
 
 Filter by layer:
 
-- `foundation` - Blockchain (Emercoin)
-- `network` - Mesh/Anonymity (Yggdrasil, I2P)
-- `transport` - VPN/Routing (AmneziaWG, Skywire)
-- `application` - Services (Privateness, DNS, RNG, etc.)
+*   `foundation` - Blockchains (Emercoin and Privateness)
+*   `network` - Mesh/Anonymity (Yggdrasil, I2P)
+*   `transport` - VPN/Routing (AmneziaWG, Skywire)
+*   `application` - Services (Privateness tools, DNS, pyuheprng, etc.)
 
 ## Environment Variables
 
 Configure via Portainer UI or stack file:
 
-```yaml
+```plaintext
 environment:
   - EMERCOIN_VERSION=0.8.5
   - I2P_VERSION=2.4.0
@@ -108,15 +108,15 @@ environment:
 
 All volumes labeled for easy identification:
 
-- `emercoin-data` - Blockchain data
-- `yggdrasil-data` - Mesh configuration
-- `i2p-data` - I2P router data
-- `skywire-data` - Skywire node data
-- `awg-config` - AmneziaWG configuration
+*   `emercoin-data` - Blockchain data
+*   `yggdrasil-data` - Mesh configuration
+*   `i2p-data` - I2P router data
+*   `skywire-data` - Skywire node data
+*   `awg-config` - AmneziaWG configuration
 
 ### Backup Volumes
 
-```bash
+```plaintext
 # Via Portainer UI: Volumes → Select → Download backup
 # Or via CLI:
 docker run --rm -v emercoin-data:/data -v $(pwd):/backup \
@@ -127,31 +127,31 @@ docker run --rm -v emercoin-data:/data -v $(pwd):/backup \
 
 ### Team-based Access
 
-1. **Settings** → **Teams** → Create `privateness` team
-2. Assign users to team
-3. Services auto-restrict to team members (via labels)
+1.  **Settings** → **Teams** → Create `privateness` team
+2.  Assign users to team
+3.  Services auto-restrict to team members (via labels)
 
 ### Role-based Permissions
 
-- **Admin**: Full stack control
-- **Operator**: Start/stop services, view logs
-- **Read-only**: View status only
+*   **Admin**: Full stack control
+*   **Operator**: Start/stop services, view logs
+*   **Read-only**: View status only
 
 ## Health Monitoring
 
 ### Service Health Checks
 
-- **Emercoin**: `emercoin-cli getinfo`
-- **I2P**: HTTP console on port 7657
-- **Privateness**: HTTP endpoint on port 8080
+*   **Emercoin**: `emercoin-cli getinfo`
+*   **I2P**: HTTP console on port 7657
+*   **Privateness**: HTTP endpoint on port 8080
 
 ### Portainer Webhooks
 
 Set up webhooks for:
 
-- Service restart notifications
-- Health check failures
-- Resource limit alerts
+*   Service restart notifications
+*   Health check failures
+*   Resource limit alerts
 
 ## Troubleshooting
 
@@ -159,65 +159,65 @@ Set up webhooks for:
 
 **Services won't start**
 
-- Check host has required capabilities: `NET_ADMIN`, `SYS_MODULE`
-- Verify `/dev/net/tun` exists: `ls -l /dev/net/tun`
-- Check port conflicts: `netstat -tulpn`
+*   Check host has required capabilities: `NET_ADMIN`, `SYS_MODULE`
+*   Verify `/dev/net/tun` exists: `ls -l /dev/net/tun`
+*   Check port conflicts: `netstat -tulpn`
 
 **I2P/Yggdrasil fails**
 
-- Ensure kernel modules loaded: `lsmod | grep tun`
-- Check sysctls: `sysctl net.ipv6.conf.all.forwarding`
+*   Ensure kernel modules loaded: `lsmod | grep tun`
+*   Check sysctls: `sysctl net.ipv6.conf.all.forwarding`
 
 **Emercoin sync slow**
 
-- Increase volume size
-- Check network connectivity
-- View logs: Portainer → emercoin-core → Logs
+*   Increase volume size
+*   Check network connectivity
+*   View logs: Portainer → emercoin-core → Logs
 
 ### Portainer Logs
 
 View stack deployment logs:
 
-- **Stacks** → `privateness-network` → **Logs**
-- Filter by service
-- Download logs for analysis
+*   **Stacks** → `privateness-network` → **Logs**
+*   Filter by service
+*   Download logs for analysis
 
 ## Updating Stack
 
 ### Via Portainer UI
 
-1. **Stacks** → `privateness-network` → **Editor**
-2. Modify YAML
-3. **Update the stack**
-4. Select **Pull latest images**
+1.  **Stacks** → `privateness-network` → **Editor**
+2.  Modify YAML
+3.  **Update the stack**
+4.  Select **Pull latest images**
 
 ### Rolling Updates
 
 Update individual services without downtime:
 
-1. **Containers** → Select service
-2. **Recreate** → Enable **Pull latest image**
-3. Service restarts with new version
+1.  **Containers** → Select service
+2.  **Recreate** → Enable **Pull latest image**
+3.  Service restarts with new version
 
 ## Integration with Umbrel
 
 Deploy on Umbrel via Portainer:
 
-1. Install Portainer on Umbrel
-2. Deploy `portainer-stack.yml`
-3. Access via Umbrel dashboard
+1.  Install Portainer on Umbrel
+2.  Deploy `portainer-stack.yml`
+3.  Access via Umbrel dashboard
 
 ## Production Recommendations
 
-1. **Enable auto-updates** for security patches
-2. **Set resource limits** per service
-3. **Configure backups** for volumes
-4. **Monitor health checks** via webhooks
-5. **Use secrets** for sensitive configs
-6. **Enable RBAC** for multi-user access
+1.  **Enable auto-updates** for security patches
+2.  **Set resource limits** per service
+3.  **Configure backups** for volumes
+4.  **Monitor health checks** via webhooks
+5.  **Use secrets** for sensitive configs
+6.  **Enable RBAC** for multi-user access
 
 ## Support
 
-- **Portainer Docs**: <https://docs.portainer.io>
-- **Privateness Network**: <https://privateness.network>
-- **Issues**: GitHub repository
+*   **Portainer Docs**: <https://docs.portainer.io>
+*   **Privateness Network**: <https://privateness.network>
+*   **Issues**: GitHub repository

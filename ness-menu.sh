@@ -159,6 +159,22 @@ check_entropy() {
   fi
 }
 
+start_single_service() {
+  local svc="$1"
+  local label="$2"
+
+  echo
+  echo -e "${yellow}Starting service: ${label}...${reset}"
+  require_docker || return 1
+
+  compose up -d "$svc"
+
+  # If we just started emercoin-core, wait for its healthcheck
+  if [ "$svc" = "emercoin-core" ]; then
+    wait_for_emercoin_core || true
+  fi
+}
+
 start_stack() {
   echo
   echo -e "${yellow}Starting Ness Essential stack...${reset}"
@@ -171,6 +187,32 @@ start_stack() {
 
   # Enforce dependency order by waiting for Emercoin Core to report healthy
   wait_for_emercoin_core || true
+}
+
+start_services_menu() {
+  while true; do
+    echo
+    echo -e "${green}Start services menu (Ness Essential stack):${reset}"
+    echo "  1) Start EVERYTHING (full stack)"
+    echo "  2) Start Emercoin Core only"
+    echo "  3) Start pyuheprng-privatenesstools only"
+    echo "  4) Start DNS reverse proxy only"
+    echo "  5) Start Privateness only"
+    echo "  6) Start IPFS only"
+    echo "  0) Back"
+    echo
+    read -rp "Select an option: " choice
+    case "$choice" in
+      1) start_stack ;;
+      2) start_single_service "emercoin-core" "Emercoin Core" ;;
+      3) start_single_service "pyuheprng-privatenesstools" "pyuheprng-privatenesstools" ;;
+      4) start_single_service "dns-reverse-proxy" "DNS reverse proxy" ;;
+      5) start_single_service "privateness" "Privateness" ;;
+      6) start_single_service "ipfs" "IPFS" ;;
+      0) return 0 ;;
+      *) echo "Invalid choice." ;;
+    esac
+  done
 }
 
 stop_stack() {
@@ -657,7 +699,7 @@ menu() {
     read -rp "Select an option: " choice
     case "$choice" in
       1) build_images_menu ;;
-      2) start_stack ;;
+      2) start_services_menu ;;
       3) test_menu ;;
       4) status_stack ;;
       5) logs_stack ;;

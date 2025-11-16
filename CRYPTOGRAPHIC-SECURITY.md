@@ -47,12 +47,12 @@ For any operator who deploys the Privateness stack as documented, this effective
 
 ### Entropy Deprivation Prevention
 
-**Entropy deprivation possibility is ELIMINATED** by:
+**Entropy deprivation is effectively eliminated on correctly configured hosts** by:
 
 - **Continuous feeding**: pyuheprng constantly feeds `/dev/random`
 - **Multiple sources**: RC4OK + hardware bits + UHEP
 - **No fallback to weak RNG**: System blocks if entropy insufficient
-- **Direct /dev/random access**: Bypasses kernel entropy estimation
+- **Direct /dev/random access**: Feeds the kernel entropy pool directly rather than relying only on process-local PRNG state
 
 ### /dev/urandom is DISABLED
 
@@ -175,7 +175,7 @@ with open('/dev/random', 'wb') as random_dev:
 
 ### 1. No Weak Randomness
 
-**GUARANTEED**: System will never use weak or predictable randomness.
+The system is **engineered so that RNG-dependent operations do not use weak or predictable randomness**, assuming the host is configured as documented.
 
 - `/dev/urandom` disabled (no depleted pool fallback)
 - pyuheprng blocks if sources unavailable
@@ -183,7 +183,7 @@ with open('/dev/random', 'wb') as random_dev:
 
 ### 2. Continuous Entropy
 
-**GUARANTEED**: Entropy pool never depletes.
+The architecture is designed so that the entropy pool **does not deplete under normal operation**.
 
 - pyuheprng feeds `/dev/random` continuously
 - Multiple independent sources
@@ -192,16 +192,16 @@ with open('/dev/random', 'wb') as random_dev:
 
 ### 3. Cryptographic Strength
 
-**GUARANTEED**: All randomness is cryptographically secure.
+All randomness is sourced from **cryptographically strong primitives and entropy sources**:
 
-- RC4OK: Blockchain-derived (unpredictable)
+- RC4OK: Blockchain-driven PRNG (unpredictable, consensus-verified inputs)
 - Hardware bits: Physical randomness
 - UHEP: Validated hardware sources
 - SHA-512 mixing: Cryptographic combination
 
 ### 4. No Trust in CPU/Bootloader
 
-**GUARANTEED**: No implicit trust in hardware.
+The design **removes implicit trust in CPU/bootloader RNG as a sole entropy source**.
 
 - GRUB disables CPU trust (`random.trust_cpu=off`)
 - GRUB disables bootloader trust (`random.trust_bootloader=off`)
@@ -332,12 +332,12 @@ services:
 
 | Aspect | Standard Linux | Privateness Network |
 |--------|---------------|---------------------|
-| /dev/urandom | Enabled (unsafe) | **DISABLED** |
-| Entropy depletion | Possible | **IMPOSSIBLE** |
-| Weak randomness | Possible | **BLOCKED** |
+| /dev/urandom | Enabled (may be misused for crypto) | **DISABLED** |
+| Entropy depletion | Possible | **Engineered to be highly unlikely under normal operation** |
+| Weak randomness | Possible | **Blocked by design (operations halt instead)** |
 | Entropy sources | CPU, bootloader (trusted) | RC4OK + Hardware + UHEP (validated) |
-| Blocking behavior | Avoided | **ENFORCED** |
-| Security guarantee | Best effort | **ABSOLUTE** |
+| Blocking behavior | Often avoided | **Enforced when entropy is low** |
+| Security guarantee | Best effort | **Model-driven, depends on correct deployment** |
 
 ### Why This Matters
 
@@ -348,7 +348,7 @@ services:
 - Session hijacking
 - Authentication bypass
 
-**Privateness Network eliminates this risk entirely.**
+The Privateness stack **greatly reduces this risk** on hosts that follow the documented deployment recipe.
 
 ## Technical Deep Dive
 
@@ -430,15 +430,15 @@ class UHEP:
 
 ## Conclusion
 
-**Privateness Network provides absolute cryptographic security**:
+The Privateness entropy architecture is engineered to provide **very strong cryptographic security** for randomness-dependent operations:
 
-1. ✅ **No weak randomness**: System blocks rather than proceed unsafely
-2. ✅ **No entropy depletion**: pyuheprng feeds /dev/random continuously
+1. ✅ **No weak randomness by design**: System blocks rather than proceed unsafely when entropy is insufficient
+2. ✅ **Entropy deprivation effectively prevented**: pyuheprng feeds `/dev/random` continuously on correctly configured hosts
 3. ✅ **Multiple sources**: RC4OK + Hardware + UHEP
 4. ✅ **/dev/urandom disabled**: GRUB configuration prevents weak fallback
 5. ✅ **Validated entropy**: Continuous health monitoring
-6. ✅ **Blockchain-verified**: RC4OK from Emercoin provides proven randomness
+6. ✅ **Blockchain-verified input**: RC4OK from Emercoin incorporates consensus-protected blockchain state
 
-**This is the most secure entropy architecture possible.**
+This is an **extremely hardened entropy architecture** for real-world cryptographic operations on Linux systems that follow this deployment model.
 
 For production deployment, **GRUB configuration is mandatory** to disable /dev/urandom.

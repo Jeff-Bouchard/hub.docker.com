@@ -61,7 +61,7 @@ By continuously injecting this 1536-bit-class entropy into `/dev/random` and **d
 
 ## Entropy Deprivation Prevention
 
-**Entropy deprivation is ELIMINATED** by:
+**Entropy deprivation is effectively eliminated on correctly configured hosts** by:
 - Continuous feeding of `/dev/random`
 - Multiple independent sources (RC4OK + Hardware + UHEP)
 - No fallback to weak RNG
@@ -145,11 +145,11 @@ cat /proc/cmdline | grep random
 
 `/dev/urandom` will return data even when the entropy pool is depleted, which is **cryptographically unsafe**.
 
-By disabling it via GRUB, we ensure:
-- No weak randomness fallback
-- All cryptographic operations use `/dev/random`
-- System blocks rather than proceed unsafely
-- Absolute cryptographic security
+By disabling it via GRUB and running pyuheprng, we ensure for this host:
+- No weak randomness fallback under normal Linux RNG semantics
+- All cryptographic operations use `/dev/random` fed by hardened sources
+- System blocks rather than proceed unsafely when entropy is genuinely unavailable
+- RNG behavior is hardened well beyond typical Linux defaults
 
 ## Monitoring
 
@@ -229,7 +229,7 @@ STATUS: Entropy generation continues
 ## Security Guarantees
 
 ### 1. No Weak Randomness
-✅ System will never use weak or predictable randomness  
+✅ System is engineered to avoid weak or predictable randomness for RNG-dependent operations  
 ✅ Blocks rather than proceed unsafely  
 ✅ `/dev/urandom` disabled via GRUB  
 
@@ -312,12 +312,12 @@ Windows containers should use native Windows entropy APIs.
 
 ## Conclusion
 
-`pyuheprng` provides **absolute cryptographic security** by:
+`pyuheprng` is engineered to provide **very strong cryptographic security** for randomness-dependent operations by:
 
 1. ✅ Feeding `/dev/random` directly with multiple entropy sources
-2. ✅ Eliminating entropy deprivation possibility
+2. ✅ Effectively eliminating entropy deprivation for correctly configured hosts
 3. ✅ Blocking rather than performing unsecure operations
 4. ✅ Requiring GRUB configuration to disable `/dev/urandom`
 5. ✅ Providing continuous health monitoring
 
-**This is the most secure entropy architecture possible for cryptographic operations.**
+**This is an extremely hardened entropy architecture for real-world cryptographic operations on Linux hosts that follow this deployment recipe.**

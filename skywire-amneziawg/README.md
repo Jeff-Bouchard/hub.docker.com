@@ -23,12 +23,12 @@ Privateness Services / Internet
 ### Why This Is Untraceable
 
 1. **Protocol Hopping**: TCP/IP → UDP → MPLS → IPv6 → Garlic Routing
-2. **No IP in Core**: Skywire MPLS uses label switching, NOT IP routing
+2. **No IP in Core**: Skywire MPLS uses label switching in the mesh core instead of ordinary IP routing
 3. **Network Hopping**: Dynamic path selection, changes per packet
 4. **Encryption Layers**: 5+ layers of encryption
 5. **Decentralized**: No central servers to monitor
 
-**Result**: Impossible to track or trace network activity
+**Result**: Extremely hard in practice to track or trace network activity across all layers simultaneously
 
 ## Traffic Flow
 

@@ -46,7 +46,7 @@ Complete list of all services in the privateness.network stack.
 **MPLS mesh routing**
 - Decentralized routing
 - Multi-path selection
-- No IP routing in core
+- Label-based forwarding in mesh core instead of ordinary IP routing
 - Port: 8000
 
 ### 7. Yggdrasil

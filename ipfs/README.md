@@ -127,12 +127,12 @@ ipfs get QmXxx...
 2. **Permanent file storage**
    - Upload to IPFS
    - Pin on multiple nodes
-   - Content persists forever
+   - Content persists as long as at least one node keeps it pinned
 
 3. **Content distribution**
    - Upload once
    - Peers distribute automatically
-   - No bandwidth costs
+   - Greatly reduced origin bandwidth costs (peers share the load)
 
 4. **Blockchain data storage**
    - Store large data in IPFS
