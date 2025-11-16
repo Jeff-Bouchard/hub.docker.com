@@ -5,6 +5,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_USER="${DOCKER_USER:-nessnetwork}"
 
+BUILD_ARGS=()
+if [[ "${NO_CACHE:-0}" != "0" ]]; then
+  BUILD_ARGS+=("--no-cache")
+fi
+
 # Keep the build order deterministic so dependency images are prepared first.
 IMAGES=(
   "emercoin-core"
@@ -36,7 +41,7 @@ for image in "${IMAGES[@]}"; do
   fi
 
   echo "\n>>> Building ${DOCKER_USER}/${image}:latest"
-  docker build -t "${DOCKER_USER}/${image}:latest" "${context_path}"
+  docker build "${BUILD_ARGS[@]}" -t "${DOCKER_USER}/${image}:latest" "${context_path}"
 done
 
 echo "\nAll images built successfully."

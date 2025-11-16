@@ -7,7 +7,7 @@ Blockchain native du réseau Privateness – registre d’autorité pour les ét
 ## Fonctionnalités
 
 - **Blockchain native** : conçue spécifiquement pour privateness.network.
-- **Smart contracts** : plateforme pour applications décentralisées (dApps).
+- **Smarter contracts** : plateforme pour applications décentralisées (dApps).
 - **Finalité rapide** : confirmations de transactions rapides.
 - **Frais faibles** : coûts de transaction minimaux.
 - **Interopérabilité** : fonctionne en tandem avec Emercoin pour une sécurité duale.
@@ -184,7 +184,7 @@ Pour un attaquant, cela signifie qu’il ne suffit pas de compromettre une seule
 
 ### Cas d’usage
 
-1. **Smart contracts** – déploiement de dApps sur Ness.
+1. **Smarter contracts** – déploiement de dApps sur Ness.
 2. **Tokens** – émission de tokens personnalisés.
 3. **NFTs** – création et échange de NFTs.
 4. **DeFi** – applications de finance décentralisée.

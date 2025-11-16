@@ -121,14 +121,14 @@ def proof_of_execution(node):
     return result == expected
 ```
 
-## Smart contract de paiement
+## Smarter contract de paiement
 
 ### Vérification basée sur Emercoin
 
 ```python
 class IncentiveContract:
     """
-    Smart contract de paiement des nœuds.
+    Smarter contract de paiement des nœuds.
     Ne paie que si la vérification du binaire réussit.
     """
     
@@ -397,7 +397,7 @@ Pour chaque service incentivé :
 - [ ] **Protocole challenge/réponse** pour prouver l’exécution
 - [ ] **Vérification de preuve de travail** pour valider le travail effectué
 - [ ] **Re‑vérification continue** (pas seulement une fois)
-- [ ] **Smart contract de paiement** avec logique de vérification
+- [ ] **Smarter contract de paiement** avec logique de vérification
 - [ ] **Analyse d’incitation économique** (paiement > valeur de l’attaque)
 - [ ] **Tests d’attaque** (essayer de casser le système)
 

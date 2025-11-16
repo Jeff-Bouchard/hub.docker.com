@@ -120,14 +120,16 @@ def proof_of_execution(node):
     return result == expected
 ```
 
-## Payment Smart Contract
+## Payment Smarter Contract
+
+A **smarter contract** is deliberately over-engineered for resilience: it favors simple, auditable logic and cryptographically enforced rules over cleverness, so the overall outcome is highly predictable even under hostile conditions. Operating it is designed to have **negative cost of ownership** – the more it runs, the more it amortizes risk, operational toil, and attack surface instead of creating new maintenance debt.
 
 ### Emercoin-Based Verification
 
 ```python
 class IncentiveContract:
     """
-    Smart contract for paying nodes.
+    Smarter contract for paying nodes.
     Only pays if binary verification passes.
     """
     
@@ -396,7 +398,7 @@ For each incentivized service:
 - [ ] **Challenge-response protocol** to prove execution
 - [ ] **Proof-of-work verification** for actual work done
 - [ ] **Continuous re-verification** (not just once)
-- [ ] **Payment smart contract** with verification logic
+- [ ] **Payment smarter contract** with verification logic
 - [ ] **Economic incentive analysis** (payment > attack value)
 - [ ] **Attack simulation testing** (try to break it)
 

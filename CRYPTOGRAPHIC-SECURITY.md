@@ -20,6 +20,31 @@ The `pyuheprng` service provides **cryptographically secure entropy** by feeding
 
 **For non-Windows machines only** - Windows uses different entropy sources.
 
+#### Ultra-high entropy (1536-bit class) and DNS impact
+
+`pyuheprng` builds on Steve Gibson's **Ultra High Entropy PRNG (UHEPRNG)** design, which uses **more than 1536 bits of internal state** with parameters chosen so that every internal state is visited before any sequence repeats. This yields an effective entropy on the order of 2^1536 — vastly beyond the ~256–384 bits typical of conventional cryptographic PRNGs.
+
+In Privateness, this ultra-high-entropy core is further mixed with:
+
+- Emercoin **RC4OK** blockchain randomness (block hashes, transactions, timing).
+- Multiple **hardware entropy sources** via UHEP.
+- **SHA-512** cryptographic mixing before injection into `/dev/random`.
+
+Because `pyuheprng` **continuously feeds `/dev/random`** and `/dev/urandom` is explicitly **disabled**, any service on this host that draws randomness from `/dev/random` benefits from:
+
+- **DNS transaction IDs and source ports** that are backed by 1536-bit-class entropy.
+- **DNSSEC keys and TLS keys (DoT/DoH)** generated without low-entropy failures.
+- A removal of the "weak RNG" angle that many DNS cache poisoning and key compromise attacks still depend on globally.
+
+Very few systems on the Internet today combine:
+
+- Ultra-high-entropy PRNG design (UHEPRNG class),
+- Physics-backed hardware entropy (UHEP),
+- Blockchain-verified randomness (RC4OK), and
+- A hard requirement that everything goes through `/dev/random` with `/dev/urandom` disabled.
+
+For any operator who deploys the Privateness stack as documented, this effectively **closes an entire DNS entropy attack surface** on their own infrastructure. You cannot fix every misconfigured resolver in the world, but you can ensure that **your** DNS, smarter contracts, and cryptographic protocols never fail because the randomness was weak.
+
 ### Entropy Deprivation Prevention
 
 **Entropy deprivation possibility is ELIMINATED** by:

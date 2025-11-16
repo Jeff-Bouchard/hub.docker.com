@@ -35,6 +35,30 @@ Universal Hardware Entropy Protocol:
 - Continuous health monitoring
 - Automatic source validation
 
+## Ultra-high entropy (1536-bit class)
+
+`pyuheprng` is built on Steve Gibson's **Ultra High Entropy PRNG (UHEPRNG)** design. UHEPRNG uses **more than 1536 bits of internal state** with carefully chosen parameters (including a safe prime / Sophie Germain prime factor) so that every possible PRNG state is visited before any sequence repeats.
+
+In practice this means:
+
+- **Effective entropy ~1536 bits**, vs the ~256–384 bits typical of conventional CSPRNGs.
+- **Astronomical period**: the generator's period is on the order of 2^1536, effectively "never repeating" for any real-world deployment.
+- **Seed space that fully covers the state space**: long SeedKeys can fully initialize the generator's internal state.
+
+`pyuheprng` then **strengthens** this ultra-high entropy core by mixing it with:
+
+- Emercoin **RC4OK** blockchain randomness (block hashes, transactions, timing).
+- Multiple **hardware entropy sources** (RDRAND/RDSEED, `/dev/hwrng`, TPM, environmental noise).
+- The **UHEP** aggregation and **SHA-512** cryptographic mixing already described above.
+
+The result is an entropy service that is not just "good enough for crypto" but **vastly overprovisioned** compared to mainstream systems. This matters because the same entropy pool is used for:
+
+- **DNS randomness** (transaction IDs, source ports, DNSSEC keys for resolvers behind this host).
+- **TLS keys** (for DoT/DoH and any other cryptographic protocol on the machine).
+- **Smarter contracts and application logic** that depend on unpredictable but verifiable randomness.
+
+By continuously injecting this 1536-bit-class entropy into `/dev/random` and **disabling `/dev/urandom`**, pyuheprng eliminates an entire class of "weak RNG" attacks that still affect a large fraction of the Internet today—especially DNS cache poisoning and key-generation failures on misconfigured or entropy-starved systems. Any resolver or service that relies on `/dev/random` on a host running pyuheprng inherits this protection.
+
 ## Entropy Deprivation Prevention
 
 **Entropy deprivation is ELIMINATED** by:

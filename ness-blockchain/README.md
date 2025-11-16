@@ -7,7 +7,7 @@ Privateness Network's native blockchain - the foundation of the decentralized ec
 ## Features
 
 - **Native blockchain**: Purpose-built for privateness.network
-- **Smart contracts**: Decentralized application platform
+- **Smarter contracts**: Decentralized application platform
 - **Fast finality**: Quick transaction confirmation
 - **Low fees**: Minimal transaction costs
 - **Interoperability**: Works with Emercoin for dual-chain security
@@ -190,7 +190,7 @@ Combined consensus
 
 ### Use Cases
 
-1. **Smart Contracts**: Deploy dApps on Ness blockchain
+1. **Smarter Contracts**: Deploy dApps on Ness blockchain
 2. **Token Issuance**: Create custom tokens
 3. **NFTs**: Mint and trade NFTs
 4. **DeFi**: Decentralized finance applications
