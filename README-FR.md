@@ -325,6 +325,12 @@ docker login
 ./push-all.sh
 ```
 
+Pour rejouer un enregistrement complet de l’exécution de `./build-all.sh`, utilisez le cast asciinema présent dans ce répertoire :
+
+```bash
+asciinema play build-all.cast
+```
+
 ### Multi‑architecture (recommandé)
 
 ```bash

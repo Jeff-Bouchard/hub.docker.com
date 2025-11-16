@@ -316,6 +316,12 @@ docker login
 ./push-all.sh
 ```
 
+To replay a complete recorded run of `./build-all.sh`, use the asciinema cast in this directory:
+
+```bash
+asciinema play build-all.cast
+```
+
 ### Multi-Architecture (Recommended)
 
 ```bash
