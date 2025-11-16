@@ -6,11 +6,11 @@
 
 Feeds `/dev/random` directly with cryptographically secure entropy from multiple sources.
 
-## ⚠️ CRITICAL: System Will Block on Insufficient Entropy
+## Behaviour when entropy appears low (experimental)
 
-**This service ensures the system will BLOCK rather than perform unsecure cryptographic operations.**
+This service is configured to **block** certain cryptographic operations if it believes that available entropy may be insufficient. This favours perceived cryptographic safety over availability and **may not be appropriate for all deployments**.
 
-If entropy is insufficient, all cryptographic operations will halt until entropy is restored. This is **intentional and correct** behavior for security.
+This behaviour is **experimental** and has **not** been subject to formal cryptographic review. Operators should review the Linux RNG documentation (for example the `random(4)` man page) and the design notes in `CRYPTOGRAPHIC-SECURITY.md`, and then decide whether this trade-off matches their own threat model and tolerance for blocking.
 
 ## Entropy Sources
 
@@ -37,7 +37,7 @@ Universal Hardware Entropy Protocol:
 
 ## Ultra-high entropy (1536-bit class)
 
-`pyuheprng` is built on Steve Gibson's **Ultra High Entropy PRNG (UHEPRNG)** design. UHEPRNG uses **more than 1536 bits of internal state** with carefully chosen parameters (including a safe prime / Sophie Germain prime factor) so that every possible PRNG state is visited before any sequence repeats.
+`pyuheprng` is built on Steve Gibson's **Ultra High Entropy PRNG (UHEPRNG)** design (see [GRC UHEPRNG](https://www.grc.com/otg/uheprng.htm)). UHEPRNG uses **more than 1536 bits of internal state** with carefully chosen parameters (including a safe prime / Sophie Germain prime factor) so that every possible PRNG state is visited before any sequence repeats.
 
 In practice this means:
 
@@ -51,17 +51,17 @@ In practice this means:
 - Multiple **hardware entropy sources** (RDRAND/RDSEED, `/dev/hwrng`, TPM, environmental noise).
 - The **UHEP** aggregation and **SHA-512** cryptographic mixing already described above.
 
-The result is an entropy service that is not just "good enough for crypto" but **vastly overprovisioned** compared to mainstream systems. This matters because the same entropy pool is used for:
+The intent is to provide an entropy service that is **more conservative** than typical mainstream setups. The same entropy pool is used for:
 
-- **DNS randomness** (transaction IDs, source ports, DNSSEC keys for resolvers behind this host).
-- **TLS keys** (for DoT/DoH and any other cryptographic protocol on the machine).
-- **Smarter contracts and application logic** that depend on unpredictable but verifiable randomness.
+- DNS randomness (transaction IDs, source ports, DNSSEC keys for resolvers behind this host).
+- TLS keys (for DoT/DoH and other cryptographic protocols on the machine).
+- Smarter contracts and application logic that depend on unpredictable randomness.
 
-By continuously injecting this 1536-bit-class entropy into `/dev/random` and **disabling `/dev/urandom`**, pyuheprng eliminates an entire class of "weak RNG" attacks that still affect a large fraction of the Internet today—especially DNS cache poisoning and key-generation failures on misconfigured or entropy-starved systems. Any resolver or service that relies on `/dev/random` on a host running pyuheprng inherits this protection.
+By continuously injecting this 1536-bit-class entropy into `/dev/random` and avoiding `/dev/urandom` for cryptographic material by policy, `pyuheprng` aims to **reduce the risk** of "weak RNG" conditions on this particular host (for example, during early boot or under heavy load). It does **not** guarantee the absence of RNG-related attacks, and it does not change how external infrastructure is configured.
 
-## Entropy Deprivation Prevention
+## Entropy deprivation mitigation
 
-**Entropy deprivation is effectively eliminated on correctly configured hosts** by:
+On correctly configured hosts, the design aims to **reduce the likelihood of entropy starvation** by:
 - Continuous feeding of `/dev/random`
 - Multiple independent sources (RC4OK + Hardware + UHEP)
 - No fallback to weak RNG
@@ -109,11 +109,11 @@ services:
       - emercoin-core
 ```
 
-## GRUB Configuration (Required for Production)
+## GRUB Configuration (recommended for this profile)
 
 ### Disable /dev/urandom
 
-**CRITICAL**: For non-Windows machines, `/dev/urandom` MUST be disabled via GRUB.
+**Note**: For non-Windows machines, `/dev/urandom` is disabled via GRUB as a conservative policy choice, following the Linux RNG documentation (see `random(4)` man page [1]). This is not a claim that `/dev/urandom` is universally unsafe, but rather a design choice for this stack.
 
 Edit `/etc/default/grub`:
 
@@ -141,15 +141,11 @@ cat /proc/cmdline | grep random
 # Should show: random.trust_cpu=off random.trust_bootloader=off
 ```
 
-### Why Disable /dev/urandom?
+### Why avoid `/dev/urandom` here?
 
-`/dev/urandom` will return data even when the entropy pool is depleted, which is **cryptographically unsafe**.
+The Linux RNG documentation (`random(4)`) states that `/dev/urandom` is intended to be suitable for most cryptographic purposes once the kernel entropy pool has been properly initialised. In this project we **choose** to adopt a more conservative policy: avoid `/dev/urandom` for cryptographic material and rely on `/dev/random` fed by `pyuheprng` instead.
 
-By disabling it via GRUB and running pyuheprng, we ensure for this host:
-- No weak randomness fallback under normal Linux RNG semantics
-- All cryptographic operations use `/dev/random` fed by hardened sources
-- System blocks rather than proceed unsafely when entropy is genuinely unavailable
-- RNG behavior is hardened well beyond typical Linux defaults
+The goal is to reduce the chance of using low-entropy randomness on this host, at the cost of potential blocking. This is a design choice for this stack and is **not** a general statement that `/dev/urandom` is universally unsafe.
 
 ## Monitoring
 
@@ -312,12 +308,36 @@ Windows containers should use native Windows entropy APIs.
 
 ## Conclusion
 
-`pyuheprng` is engineered to provide **very strong cryptographic security** for randomness-dependent operations by:
+`pyuheprng` is intended to **improve the handling of randomness** for entropy-sensitive operations by:
 
-1. ✅ Feeding `/dev/random` directly with multiple entropy sources
-2. ✅ Effectively eliminating entropy deprivation for correctly configured hosts
-3. ✅ Blocking rather than performing unsecure operations
-4. ✅ Requiring GRUB configuration to disable `/dev/urandom`
-5. ✅ Providing continuous health monitoring
+1. Feeding `/dev/random` directly with multiple entropy sources.
+2. Trying to reduce entropy-deprivation situations on correctly configured hosts.
+3. Preferring to block rather than proceed when the system believes entropy may be insufficient.
+4. Encouraging a conservative `/dev/urandom` policy for this particular profile.
+5. Providing basic health monitoring for the entropy feeder.
 
-**This is an extremely hardened entropy architecture for real-world cryptographic operations on Linux hosts that follow this deployment recipe.**
+This should be treated as an **experimental configuration**, not as a claim of proven or absolute cryptographic security. It relies on the correctness of the underlying primitives and on the operator applying the documented deployment steps.
+
+## References / Sources
+
+- **Linux kernel RNG behavior**  
+  random(4) man page explaining the kernel entropy pool and the semantics of `/dev/random`, `/dev/urandom`, and `getrandom(2)`:  
+  <https://man7.org/linux/man-pages/man4/random.4.html>
+
+- **UHEPRNG (Ultra High Entropy PRNG)**  
+  Steve Gibson's description of the ultra-high-entropy PRNG design that this service uses as its conceptual basis for a "1536-bit-class" internal state:  
+  <https://www.grc.com/otg/uheprng.htm>
+
+- **Emercoin / RC4OK / EmerDNS / EmerNVS**  
+  Emercoin platform overview and blockchain services: <https://emercoin.com/en/>  
+  EmerDNS introduction (blockchain-based DNS):  
+  <https://emercoin.com/en/documentation/blockchain-services/emerdns/emerdns-introduction/>  
+  EmerNVS overview (Name–Value Storage):  
+  <https://emercoin.com/en/documentation/blockchain-services/emernvs/>  
+  EmerDNS + I2P name mapping example:  
+  <https://github.com/emercoin/docs/blob/master/en/020_Blockchain_Services/030_EmerDNS/031_I2P_Domain_Name_Registration_based_on_blockchain.md>  
+  RC4OK reference in Emercoin Core release notes:  
+  <https://github.com/emercoin/emercoin/releases>
+
+- **Central reference list for this repo**  
+  See also `SOURCES.md` at the root of this repository for a consolidated list of external documents used throughout the Privateness Network documentation.

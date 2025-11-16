@@ -2,27 +2,27 @@
 
 [Français](CRYPTOGRAPHIC-SECURITY-FR.md)
 
-## ⚠️ CRITICAL SECURITY WARNING
+## Security behaviour (experimental)
 
-**This system will BLOCK rather than perform an unsecure cryptographic operation.**
+By design, this stack is configured to **block** certain cryptographic operations if it believes that available entropy may be insufficient. This favours perceived cryptographic safety over availability and **may not be appropriate for all deployments**.
 
-The privateness.network stack prioritizes cryptographic security over availability. If sufficient entropy is not available, operations will **halt** rather than proceed with weak randomness.
+This behaviour is **experimental** and has **not** been subject to formal cryptographic review. Operators should review the references at the end of this document (in particular the Linux RNG documentation and UHEPRNG description) and decide whether this trade-off makes sense for their own environment.
 
 ## Entropy Architecture
 
-### pyuheprng - True Random Number Generation
+### pyuheprng - entropy feeder for `/dev/random`
 
-The `pyuheprng` service provides **cryptographically secure entropy** by feeding `/dev/random` directly with a mix of:
+The `pyuheprng` service aims to provide **cryptographically strong entropy** by feeding `/dev/random` directly with a mix of:
 
-1. **RC4OK from Emercoin Core**: Blockchain-derived randomness
+1. **RC4OK from Emercoin Core**: Blockchain-derived randomness (see Emercoin / RC4OK references below)
 2. **Original Hardware Bits**: Direct hardware entropy sources
-3. **UHEP (Universal Hardware Entropy Protocol)**: Hardware-level random number generation
+3. **UHEP (Universal Hardware Entropy Protocol)**: A software framework that aggregates hardware-level random number generation
 
 **For non-Windows machines only** - Windows uses different entropy sources.
 
 #### Ultra-high entropy (1536-bit class) and DNS impact
 
-`pyuheprng` builds on Steve Gibson's **Ultra High Entropy PRNG (UHEPRNG)** design, which uses **more than 1536 bits of internal state** with parameters chosen so that every internal state is visited before any sequence repeats. This yields an effective entropy on the order of 2^1536 — vastly beyond the ~256–384 bits typical of conventional cryptographic PRNGs.
+`pyuheprng` builds on Steve Gibson's **Ultra High Entropy PRNG (UHEPRNG)** design (see [GRC UHEPRNG](https://www.grc.com/otg/uheprng.htm)), which describes **more than 1536 bits of internal state** with parameters chosen so that every internal state is visited before any sequence repeats. In that design this corresponds to an effective entropy on the order of 2^1536, significantly larger than the ~256–384 bits typical of many conventional cryptographic PRNGs. Our implementation adapts these ideas but has **not** been independently analysed.
 
 In Privateness, this ultra-high-entropy core is further mixed with:
 
@@ -30,35 +30,34 @@ In Privateness, this ultra-high-entropy core is further mixed with:
 - Multiple **hardware entropy sources** via UHEP.
 - **SHA-512** cryptographic mixing before injection into `/dev/random`.
 
-Because `pyuheprng` **continuously feeds `/dev/random`** and `/dev/urandom` is explicitly **disabled**, any service on this host that draws randomness from `/dev/random` benefits from:
+Because `pyuheprng` **continuously feeds `/dev/random`** and, in the recommended configuration, `/dev/urandom` is not used for cryptographic material on this host, any local service that draws randomness from `/dev/random` is intended to benefit from:
 
-- **DNS transaction IDs and source ports** that are backed by 1536-bit-class entropy.
-- **DNSSEC keys and TLS keys (DoT/DoH)** generated without low-entropy failures.
-- A removal of the "weak RNG" angle that many DNS cache poisoning and key compromise attacks still depend on globally.
+- DNS transaction IDs and source ports that are harder to predict in practice.
+- DNSSEC keys and TLS keys (DoT/DoH) that are less likely to be generated under low-entropy conditions on this host.
+- A reduced reliance on trivially low-entropy randomness as an attack vector on this host.
 
-Very few systems on the Internet today combine:
+This combination of:
 
-- Ultra-high-entropy PRNG design (UHEPRNG class),
-- Physics-backed hardware entropy (UHEP),
-- Blockchain-verified randomness (RC4OK), and
-- A hard requirement that everything goes through `/dev/random` with `/dev/urandom` disabled.
+- UHEPRNG-style design,
+- hardware-related entropy aggregation (UHEP),
+- and blockchain-derived randomness (RC4OK),
 
-For any operator who deploys the Privateness stack as documented, this effectively **closes an entire DNS entropy attack surface** on their own infrastructure. You cannot fix every misconfigured resolver in the world, but you can ensure that **your** DNS, smarter contracts, and cryptographic protocols never fail because the randomness was weak.
+is relatively uncommon in typical deployments we are aware of. The intent is to **reduce** some DNS entropy-related attack surfaces on the operator's own infrastructure. It does **not** change the behaviour of misconfigured resolvers elsewhere on the Internet, and it should not be treated as a proof that DNS or other protocols are "solved" cryptographically.
 
-### Entropy Deprivation Prevention
+### Entropy deprivation mitigation
 
-**Entropy deprivation is effectively eliminated on correctly configured hosts** by:
+On correctly configured hosts, this design aims to **reduce the likelihood of entropy starvation** by:
 
 - **Continuous feeding**: pyuheprng constantly feeds `/dev/random`
 - **Multiple sources**: RC4OK + hardware bits + UHEP
 - **No fallback to weak RNG**: System blocks if entropy insufficient
 - **Direct /dev/random access**: Feeds the kernel entropy pool directly rather than relying only on process-local PRNG state
 
-### /dev/urandom is DISABLED
+### `/dev/urandom` policy
 
-**CRITICAL**: `/dev/urandom` is disabled via GRUB configuration to prevent weak cryptographic operations.
+In this project we **choose** to avoid `/dev/urandom` for cryptographic material by policy, using only `/dev/random` on Linux hosts.
 
-`/dev/urandom` will return random data even when entropy pool is depleted, which is **cryptographically unsafe**.
+The Linux RNG documentation ([random(4)](https://man7.org/linux/man-pages/man4/random.4.html)) states that `/dev/urandom` is intended to be suitable for most cryptographic purposes once the entropy pool has been properly initialised. Our configuration is therefore deliberately more conservative than common practice and may introduce additional blocking behaviour without clear benefit in all environments.
 
 ## GRUB Configuration (Required for Production)
 
@@ -173,40 +172,38 @@ with open('/dev/random', 'wb') as random_dev:
 
 ## Security Guarantees
 
-### 1. No Weak Randomness
+### 1. Intended avoidance of weak randomness
 
-The system is **engineered so that RNG-dependent operations do not use weak or predictable randomness**, assuming the host is configured as documented.
+The system is **intended** to avoid weak or trivially predictable randomness for RNG-dependent operations, assuming the host is configured as documented.
 
-- `/dev/urandom` disabled (no depleted pool fallback)
-- pyuheprng blocks if sources unavailable
-- Cryptographic operations halt without sufficient entropy
+- `/dev/urandom` is avoided for cryptographic use by policy.
+- `pyuheprng` blocks if it cannot obtain entropy from its configured sources.
+- Certain cryptographic operations will halt if the system believes there is insufficient entropy.
 
-### 2. Continuous Entropy
+### 2. Continuous entropy (design goal)
 
-The architecture is designed so that the entropy pool **does not deplete under normal operation**.
+The architecture is designed so that the entropy pool **should not deplete under normal operation** on a correctly configured host, although this has not been formally verified.
 
-- pyuheprng feeds `/dev/random` continuously
-- Multiple independent sources
-- Automatic failover between sources
-- Health monitoring and alerts
+- `pyuheprng` feeds `/dev/random` continuously.
+- Multiple independent sources are combined.
+- There is basic health monitoring and simple failover between sources.
 
-### 3. Cryptographic Strength
+### 3. Cryptographic strength (assumptions)
 
-All randomness is sourced from **cryptographically strong primitives and entropy sources**:
+The design assumes that the underlying primitives and entropy sources are cryptographically strong as described in their own documentation:
 
-- RC4OK: Blockchain-driven PRNG (unpredictable, consensus-verified inputs)
-- Hardware bits: Physical randomness
-- UHEP: Validated hardware sources
-- SHA-512 mixing: Cryptographic combination
+- RC4OK: blockchain-driven randomness as implemented by Emercoin (see Emercoin references below).
+- Hardware bits: physical entropy devices (e.g. `/dev/hwrng`, RDRAND/RDSEED, TPM).
+- UHEP: aggregation and mixing of hardware-related sources.
+- SHA-512 mixing: cryptographic combination function.
 
-### 4. No Trust in CPU/Bootloader
+### 4. Reduced implicit trust in CPU/bootloader
 
-The design **removes implicit trust in CPU/bootloader RNG as a sole entropy source**.
+The configuration **tries to reduce implicit trust in CPU/bootloader RNG as a sole entropy source**.
 
-- GRUB disables CPU trust (`random.trust_cpu=off`)
-- GRUB disables bootloader trust (`random.trust_bootloader=off`)
-- All entropy sources validated
-- Continuous health checks
+- GRUB is configured to disable CPU trust (`random.trust_cpu=off`).
+- GRUB is configured to disable bootloader trust (`random.trust_bootloader=off`).
+- Entropy sources are mixed and subject to basic health checks, but not to formal statistical certification.
 
 ## Monitoring
 
@@ -430,15 +427,40 @@ class UHEP:
 
 ## Conclusion
 
-The Privateness entropy architecture is engineered to provide **very strong cryptographic security** for randomness-dependent operations:
+The Privateness entropy design is intended to **improve the handling of randomness** for entropy-sensitive operations on hosts that follow this deployment model:
 
-1. ✅ **No weak randomness by design**: System blocks rather than proceed unsafely when entropy is insufficient
-2. ✅ **Entropy deprivation effectively prevented**: pyuheprng feeds `/dev/random` continuously on correctly configured hosts
-3. ✅ **Multiple sources**: RC4OK + Hardware + UHEP
-4. ✅ **/dev/urandom disabled**: GRUB configuration prevents weak fallback
-5. ✅ **Validated entropy**: Continuous health monitoring
-6. ✅ **Blockchain-verified input**: RC4OK from Emercoin incorporates consensus-protected blockchain state
+1. It attempts to avoid trivially weak randomness by favouring blocking over proceeding when entropy appears low.
+2. It tries to keep `/dev/random` supplied via `pyuheprng` on correctly configured hosts.
+3. It combines multiple entropy sources (RC4OK + hardware-related inputs + UHEP-style aggregation).
+4. It adopts a conservative policy of avoiding `/dev/urandom` for cryptographic material, which is **not** standard Linux practice.
+5. It includes basic health monitoring for the entropy feeder.
+6. It makes use of Emercoin's RC4OK output as one input, relying on Emercoin's own security properties.
 
-This is an **extremely hardened entropy architecture** for real-world cryptographic operations on Linux systems that follow this deployment model.
+This should be viewed as an **experimental design**, not as a claim of proven or absolute cryptographic security. It has not been audited by external cryptographers. Operators are strongly encouraged to read the external references, consider mainstream guidance around `/dev/urandom` (for example in the Linux `random(4)` man page), and treat this configuration as a set of ideas to evaluate rather than a drop-in replacement for well‑reviewed RNG setups.
 
-For production deployment, **GRUB configuration is mandatory** to disable /dev/urandom.
+## References / Sources
+
+- **Linux kernel random number generator**  
+  random(4) man page describing the kernel entropy pool, `/dev/random`, `/dev/urandom`, and `getrandom(2)`:  
+  <https://man7.org/linux/man-pages/man4/random.4.html>  
+  Background on `/dev/random` and `/dev/urandom` behavior on Unix-like systems:  
+  <https://en.wikipedia.org/wiki//dev/random>
+
+- **UHEPRNG (Ultra High Entropy PRNG)**  
+  Steve Gibson's description of the ultra-high-entropy PRNG design (1536-bit-class internal state) that this project uses as its conceptual basis:  
+  <https://www.grc.com/otg/uheprng.htm>
+
+- **Emercoin / RC4OK / EmerDNS / EmerNVS**  
+  Emercoin platform overview: <https://emercoin.com/en/>  
+  EmerDNS introduction (blockchain-based DNS, recommended zones):  
+  <https://emercoin.com/en/documentation/blockchain-services/emerdns/emerdns-introduction/>  
+  EmerNVS overview (Name–Value Storage service):  
+  <https://emercoin.com/en/documentation/blockchain-services/emernvs/>  
+  EmerDNS + I2P domain name registration example:  
+  <https://github.com/emercoin/docs/blob/master/en/020_Blockchain_Services/030_EmerDNS/031_I2P_Domain_Name_Registration_based_on_blockchain.md>  
+  RC4OK reference in Emercoin Core release notes (replacement for legacy fast RNG):  
+  <https://github.com/emercoin/emercoin/releases>
+
+- **Reproducible builds**  
+  Upstream reproducible-builds project describing deterministic builds and binary equivalence:  
+  <https://reproducible-builds.org/>
