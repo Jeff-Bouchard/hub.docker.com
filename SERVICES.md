@@ -331,3 +331,8 @@ For service-specific documentation, see README.md in each service directory:
 - `pyuheprng/README.md`
 - `amneziawg/README.md`
 - etc.
+
+For external specifications (Emercoin services, overlay networks, RNG behavior, etc.), see:
+
+- `SOURCES.md` at the repository root
+

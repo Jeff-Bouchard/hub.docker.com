@@ -324,3 +324,9 @@ docker login
 docker login
 ./build-multiarch.sh
 ```
+
+## External References
+
+For the external specifications and documentation that underpin this stack (Linux RNG behavior, UHEPRNG, Emercoin RC4OK/EmerDNS/EmerNVS, Yggdrasil, I2P, WireGuard/AmneziaWG, IPFS, Windows NRPT, reproducible builds), see:
+
+- `SOURCES.md` in this repository – consolidated reference list

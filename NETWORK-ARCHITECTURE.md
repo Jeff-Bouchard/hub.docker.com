@@ -345,3 +345,36 @@ The privateness.network architecture is **engineered for practical untraceabilit
 **Probability of success**: Effectively zero
 
 This is aimed at becomingthe most advanced privacy network architecture in existence.
+
+## References / Sources
+
+- **Yggdrasil Network**  
+  Official overview and documentation for the encrypted IPv6 overlay used as the mesh layer here:  
+  <https://yggdrasil-network.github.io/>  
+  <https://yggdrasil-network.github.io/documentation.html>
+
+- **I2P Anonymous Network**  
+  Technical introduction to I2P, garlic routing, and unidirectional tunnels:  
+  <https://geti2p.net/en/docs/how/tech-intro>
+
+- **WireGuard / AmneziaWG**  
+  WireGuard protocol and cryptography (baseline VPN tunnel):  
+  <https://www.wireguard.com/protocol/>  
+  AmneziaWG documentation describing the obfuscation and DPI-resistance layer used as the access protocol:  
+  <https://docs.amnezia.org/documentation/amnezia-wg/>
+
+- **Skywire**  
+  Skywire node implementation and overview of the MPLS-like mesh routing used here as the label-switched core:  
+  <https://github.com/skycoin/skywire>
+
+- **Emercoin / EmerDNS / EmerNVS**  
+  EmerDNS introduction (blockchain-based DNS) and EmerNVS overview (Name–Value Storage) as used for decentralized naming and policy:  
+  <https://emercoin.com/en/documentation/blockchain-services/emerdns/emerdns-introduction/>  
+  <https://emercoin.com/en/documentation/blockchain-services/emernvs/>
+
+- **IPFS**  
+  IPFS documentation for content-addressed storage and gateway behavior, referenced where content distribution is involved:  
+  <https://docs.ipfs.tech/>
+
+- **Central reference list**  
+  See `SOURCES.md` at the root of this repository for a consolidated list of external documents underpinning the Privateness Network documentation.

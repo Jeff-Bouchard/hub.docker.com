@@ -221,3 +221,29 @@ This access layer integrates with:
 - **DNS Proxy**: Decentralized DNS resolution
 
 Complete decentralized stack from access to application layer.
+
+## References / Sources
+
+- **AmneziaWG**  
+  Protocol and implementation details for the obfuscated WireGuard variant used as the access layer:  
+  <https://docs.amnezia.org/documentation/amnezia-wg/>
+
+- **WireGuard**  
+  Baseline VPN protocol and cryptographic design underpinning AmneziaWG:  
+  <https://www.wireguard.com/protocol/>
+
+- **Skywire**  
+  Skywire node implementation and overview of the MPLS-like mesh routing used as the core mesh:  
+  <https://github.com/skycoin/skywire>
+
+- **Yggdrasil Network**  
+  Encrypted IPv6 overlay network used as the underlying mesh:  
+  <https://yggdrasil-network.github.io/>
+
+- **I2P**  
+  Technical introduction to I2P and garlic routing:  
+  <https://geti2p.net/en/docs/how/tech-intro>
+
+- **Central reference list**  
+  See `SOURCES.md` at the repository root for a consolidated list of external documents referenced across the Privateness Network documentation.
+
