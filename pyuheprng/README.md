@@ -57,7 +57,7 @@ The intent is to provide an entropy service that is **more conservative** than t
 - TLS keys (for DoT/DoH and other cryptographic protocols on the machine).
 - Smarter contracts and application logic that depend on unpredictable randomness.
 
-By continuously injecting this 1536-bit-class entropy into `/dev/random` and avoiding `/dev/urandom` for cryptographic material by policy, `pyuheprng` aims to **reduce the risk** of "weak RNG" conditions on this particular host (for example, during early boot or under heavy load). It does **not** guarantee the absence of RNG-related attacks, and it does not change how external infrastructure is configured.
+By continuously injecting this 1536-bit-class entropy into `/dev/random` and avoiding `/dev/urandom` for cryptographic material by policy, `pyuheprng` aims to **reduce the risk** of "weak RNG" conditions on this particular host (for example, during early boot or under heavy load). It does **not** ensure the absence of RNG-related attacks, and it does not change how external infrastructure is configured.
 
 ## Entropy deprivation mitigation
 
@@ -222,7 +222,7 @@ INFO: Using CPU RDRAND/RDSEED + RC4OK
 STATUS: Entropy generation continues
 ```
 
-## Security Guarantees
+## Security Properties (design goals)
 
 ### 1. No Weak Randomness
 ✅ System is engineered to avoid weak or predictable randomness for RNG-dependent operations  

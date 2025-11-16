@@ -6,13 +6,13 @@
 
 Composant d’infrastructure qui alimente directement `/dev/random` avec une entropie cryptographiquement sûre issue de plusieurs sources, pour que tout le reste de la pile soit soit sûr, soit bloqué.
 
-## ⚠️ CRITIQUE : le système BLOQUE en cas d’entropie insuffisante
+## ⚠️ Comportement en cas d’entropie faible (profil expérimental)
 
-**Ce service garantit que le système BLOQUE plutôt que d’effectuer des opérations cryptographiques non sûres.**
+Ce service peut **bloquer** certaines opérations cryptographiques s’il estime que l’entropie disponible est insuffisante. Il privilégie ainsi la sécurité perçue par rapport à la disponibilité, ce qui **peut ne pas convenir à tous les environnements**.
 
-Si l’entropie disponible est insuffisante, toutes les opérations cryptographiques se mettent en pause jusqu’à ce que le niveau d’entropie soit rétabli. Ce comportement est **volontaire et correct** pour la sécurité.
+Si l’entropie semble insuffisante, les opérations cryptographiques se mettent en pause jusqu’à ce que le niveau revienne au‑dessus d’un seuil. Ce comportement est **un choix de conception**, inspiré de la documentation du RNG Linux (`random(4)`), et doit être évalué par chaque opérateur selon son propre modèle de menace.
 
-Pour les équipes secops/devops, considérez `pyuheprng` comme un disjoncteur : s’il bloque, c’est pour éviter que le reste de votre infrastructure ne signe des opérations faibles.
+Pour les équipes secops/devops, vous pouvez considérer `pyuheprng` comme un disjoncteur : s’il bloque, c’est pour éviter que l’infrastructure ne signe des opérations dans des conditions d’entropie jugées défavorables.
 
 ## Sources d’entropie
 
@@ -45,12 +45,12 @@ Universal Hardware Entropy Protocol :
 
 ## Prévention de la privation d’entropie
 
-**La privation d’entropie est ÉLIMINÉE** grâce à :
+Sur des hôtes correctement configurés, ce design vise à **réduire nettement le risque de privation d’entropie** :
 
 - Alimentation continue de `/dev/random`.
 - Sources multiples (RC4OK + matériel + UHEP).
-- Aucun repli vers un RNG faible.
-- Blocage du système en cas d’entropie insuffisante.
+- Aucun repli volontaire vers un RNG considéré faible.
+- Blocage du système si l’entropie semble insuffisante.
 
 ## Déploiement
 
@@ -128,13 +128,11 @@ cat /proc/cmdline | grep random
 
 ### Pourquoi désactiver /dev/urandom ?
 
-`/dev/urandom` continue de renvoyer des données même lorsque le pool d’entropie est épuisé, ce qui peut être **cryptographiquement dangereux**.
+La documentation du RNG Linux (`random(4)`) indique que `/dev/urandom` est prévu pour être adapté à la plupart des usages cryptographiques une fois le pool initialisé. Dans ce projet, nous choisissons un profil **plus conservateur** :
 
-En le désactivant :
-
-- Aucun repli vers un aléa faible.
-- Toutes les opérations cryptographiques passent par `/dev/random`.
-- Le système bloque plutôt que de continuer de manière non sûre.
+- Éviter `/dev/urandom` comme source d’aléa pour la cryptographie dans ce conteneur.
+- Forcer les opérations sensibles à passer par `/dev/random`, alimenté par `pyuheprng`.
+- Accepter un risque de blocage plus fréquent pour réduire la probabilité d’utiliser un aléa manifestement faible.
 
 ## Supervision
 
@@ -211,32 +209,31 @@ INFO: Using CPU RDRAND/RDSEED + RC4OK
 STATUS: Entropy generation continues
 ```
 
-## Garanties de sécurité
+## Propriétés de sécurité (objectifs de conception)
 
-### 1. Pas d’aléa faible
+### 1. Réduction de l’aléa faible
 
-- ✅ Le système n’utilise jamais un aléa prévisible.
-- ✅ Il bloque plutôt que de continuer en mode dégradé.
-- ✅ `/dev/urandom` est désactivé via GRUB.
+- ✅ Le système est conçu pour éviter autant que possible un aléa clairement prévisible.
+- ✅ Il préfère bloquer plutôt que de continuer en mode dégradé.
+- ✅ `/dev/urandom` est évité pour la crypto dans ce profil.
 
-### 2. Aucun épuisement d’entropie
+### 2. Limitation de l’épuisement d’entropie
 
 - ✅ `/dev/random` est alimenté en continu.
-- ✅ Multiples sources d’entropie indépendantes.
-- ✅ Basculement automatique entre sources.
+- ✅ Multiples sources d’entropie indépendantes sont combinées.
+- ✅ Un basculement simple entre sources et des healthchecks de base sont présents.
 
-### 3. Force cryptographique
+### 3. Hypothèses de force cryptographique
 
-- ✅ RC4OK : aléa vérifié par blockchain.
-- ✅ Matériel : sources physiques.
-- ✅ UHEP : protocole matériel validé.
-- ✅ Mélange SHA‑512 : combinaison cryptographique.
+- ✅ RC4OK : aléa dérivé de la blockchain Emercoin, supposé fort selon sa documentation.
+- ✅ Matériel : sources physiques (RNG matériels, CPU, TPM, bruit environnemental).
+- ✅ UHEP : agrégation de ces sources matérielles.
+- ✅ Mélange SHA‑512 : combinaison cryptographique standard.
 
-### 4. Aucune confiance implicite dans le matériel
+### 4. Réduction de la confiance implicite dans le matériel
 
 - ✅ GRUB désactive la confiance CPU et bootloader.
-- ✅ Toutes les sources sont validées.
-- ✅ Healthchecks en continu.
+- ✅ Les sources sont combinées et monitorées, mais sans certification formelle.
 
 ## API HTTP
 
@@ -299,12 +296,12 @@ Les conteneurs Windows doivent s’appuyer sur ces sources plutôt que sur `/dev
 
 ## Conclusion
 
-`pyuheprng` fournit une **sécurité cryptographique maximale** en durcissant la base plutôt qu’en espérant que « tout se passera bien » :
+`pyuheprng` vise à **améliorer la gestion de l’entropie** pour les opérations sensibles, en durcissant la base plutôt qu’en espérant que « tout se passera bien » :
 
-1. ✅ Alimentant `/dev/random` avec plusieurs sources d’entropie.
-2. ✅ Éliminant la privation d’entropie.
-3. ✅ Bloquant plutôt que d’autoriser des opérations non sûres.
-4. ✅ Imposant une configuration GRUB qui désactive `/dev/urandom`.
-5. ✅ Offrant un monitoring complet de la santé et du débit.
+1. ✅ En alimentant `/dev/random` avec plusieurs sources d’entropie.
+2. ✅ En cherchant à réduire la privation d’entropie sur les hôtes correctement configurés.
+3. ✅ En préférant bloquer plutôt que d’autoriser des opérations jugées non sûres.
+4. ✅ En proposant un profil GRUB qui désactive `/dev/urandom` pour la crypto dans ce contexte.
+5. ✅ En offrant un monitoring de base de la santé et du débit.
 
-Pour une description encore plus détaillée de l’architecture d’entropie, voir **CRYPTOGRAPHIC-SECURITY-FR.md**. C’est ici que vous transformez une hypothèse floue sur « l’aléa système » en une position mesurable et difficile à attaquer.
+Il s’agit d’une configuration **expérimentale**, qui repose sur des hypothèses de sécurité à vérifier dans votre propre contexte. Pour une description plus détaillée de l’architecture d’entropie et des références externes (Linux RNG, UHEPRNG, Emercoin), voir **CRYPTOGRAPHIC-SECURITY-FR.md** et `SOURCES.md` à la racine du dépôt.

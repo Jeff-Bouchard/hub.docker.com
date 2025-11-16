@@ -187,7 +187,7 @@ skywire-amneziawg (independent)
 ### Layer 5: Security
 - pyuheprng (entropy)
 - Binary verification (reproducible builds)
-- Cryptographic guarantees
+- Cryptographic properties (design goals)
 
 ## Use Cases by Service Combination
 

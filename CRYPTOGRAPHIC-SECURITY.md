@@ -1,4 +1,4 @@
-# Cryptographic Security - Entropy Guarantee
+# Cryptographic Security - Entropy Design
 
 [Français](CRYPTOGRAPHIC-SECURITY-FR.md)
 
@@ -170,7 +170,7 @@ with open('/dev/random', 'wb') as random_dev:
     random_dev.write(mixed_entropy)
 ```
 
-## Security Guarantees
+## Security Properties (design goals)
 
 ### 1. Intended avoidance of weak randomness
 
@@ -277,7 +277,7 @@ STATUS: pyuheprng feeding entropy
 rngd -r /dev/urandom -o /dev/random
 ```
 
-**NEVER use in production** - defeats security guarantees.
+**NEVER use in production** - defeats the intended security properties of this configuration.
 
 ## Architecture Integration
 
@@ -334,7 +334,7 @@ services:
 | Weak randomness | Possible | **Blocked by design (operations halt instead)** |
 | Entropy sources | CPU, bootloader (trusted) | RC4OK + Hardware + UHEP (validated) |
 | Blocking behavior | Often avoided | **Enforced when entropy is low** |
-| Security guarantee | Best effort | **Model-driven, depends on correct deployment** |
+| Security model | Best effort | **Model-driven, depends on correct deployment** |
 
 ### Why This Matters
 
