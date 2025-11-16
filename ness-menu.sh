@@ -170,6 +170,37 @@ logs_stack() {
   compose logs -f
 }
 
+remove_everything_local() {
+  echo
+  echo -e "${red}WARNING: This will remove all local Ness Docker containers, volumes, and images.${reset}"
+  echo -e "${red}It does NOT touch any remote repositories (Docker Hub).${reset}"
+  echo
+  read -rp "Type 'ness' to confirm local cleanup: " answer
+  if [ "$answer" != "ness" ]; then
+    echo "Aborted."
+    return 1
+  fi
+
+  require_docker || return 1
+
+  echo
+  echo -e "${yellow}Stopping and removing Ness Essential stack containers and volumes...${reset}"
+  compose down -v || true
+
+  echo
+  echo -e "${yellow}Removing local Docker images in 'nessnetwork/*' or 'ness-network/*' namespaces...${reset}"
+  local images
+  images=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^ness(network|-)/' || true)
+  if [ -n "$images" ]; then
+    echo "$images" | xargs -r docker rmi -f
+  else
+    echo "No local Ness images found."
+  fi
+
+  echo
+  echo -e "${green}Local cleanup complete.${reset}"
+}
+
 health_check() {
   echo
   echo -e "${yellow}Core node health check...${reset}"
@@ -337,6 +368,7 @@ menu() {
     echo "  4) Tail stack logs"
     echo "  5) Check entropy"
     echo "  6) Core node health check"
+    echo "  7) Remove everything local (containers/images/volumes)"
     echo "  0) Exit"
     echo
     read -rp "Select an option: " choice
@@ -347,6 +379,7 @@ menu() {
       4) logs_stack ;;
       5) check_entropy ;;
       6) health_check ;;
+      7) remove_everything_local ;;
       0) exit 0 ;;
       *) echo "Invalid choice." ;;
     esac

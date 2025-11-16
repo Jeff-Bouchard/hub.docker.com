@@ -4,6 +4,8 @@ Hypersimple Docker images for Umbrel app store integration.
 
 [Français](README-FR.md)
 
+<a href="https://asciinema.org/a/QqGDvbbTYotxKn6ZKcSndUP7V" target="_blank"><img src="https://asciinema.org/a/QqGDvbbTYotxKn6ZKcSndUP7V.svg" /></a>
+
 ## ⚠️ CRITICAL SECURITY ADVISORY
 
 **This system will BLOCK rather than perform an unsecure cryptographic operation.**
