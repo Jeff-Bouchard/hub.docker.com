@@ -33,50 +33,19 @@ ENV PATH=$PATH:$GOPATH/bin
 
 WORKDIR /build
 
-# Build Emercoin
-ENV EMERCOIN_VERSION=0.8.5
-ENV EMERCOIN_TAG=v0.8.5emc
-RUN ARCH=$(dpkg --print-architecture) && \
-    case ${ARCH} in \
-        amd64) EMERCOIN_ARCH="x86_64-linux-gnu" ;; \
-        *) echo "Unsupported architecture for prebuilt Emercoin release: ${ARCH}" && exit 1 ;; \
-    esac && \
-    ARCHIVE_NAME="emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}.tar.xz" && \
-    wget https://github.com/emercoin/emercoin/releases/download/${EMERCOIN_TAG}/${ARCHIVE_NAME} \
-    && tar -xJf ${ARCHIVE_NAME} \
-    && mv emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}/emercoind /usr/local/bin/ \
-    && mv emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}/emercoin-qt /usr/local/bin/ \
-    && mv emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH}/emercoin-cli /usr/local/bin/ \
-    && rm -rf emercoin-${EMERCOIN_VERSION}-${EMERCOIN_ARCH} ${ARCHIVE_NAME}
+# Install Emercoin from our multi-arch image
+COPY --from=nessnetwork/emercoin-core:latest /usr/local/bin/emercoind /usr/local/bin/emercoind
+COPY --from=nessnetwork/emercoin-core:latest /usr/local/bin/emercoin-cli /usr/local/bin/emercoin-cli
+# Try /usr/bin if /usr/local/bin fails? Docker doesn't support conditional copy.
+# Assumption: emercoin-core uses /usr/local/bin (based on previous manual install in this file moving to /usr/local/bin)
 
-ENV YGGDRASIL_VERSION=0.5.12
+# Install Yggdrasil from our multi-arch image
+COPY --from=nessnetwork/yggdrasil:latest /usr/local/bin/yggdrasil /usr/local/bin/yggdrasil
+COPY --from=nessnetwork/yggdrasil:latest /usr/local/bin/yggdrasilctl /usr/local/bin/yggdrasilctl
 
-# Install Yggdrasil from vendored tarball (no systemd deps)
-RUN set -e; \
-    wget -O /tmp/yggdrasil.tar.gz "https://github.com/yggdrasil-network/yggdrasil-go/releases/download/v${YGGDRASIL_VERSION}/yggdrasil-${YGGDRASIL_VERSION}-vendored.tar.gz"; \
-    tar -xzf /tmp/yggdrasil.tar.gz -C /usr/local/bin; \
-    rm /tmp/yggdrasil.tar.gz
-
-# Install Skywire from prebuilt v1.3.31 release tarball (also keep source under GOPATH)
-ENV SKYWIRE_VERSION=1.3.31
-RUN set -e; \
-    ARCH=$(dpkg --print-architecture); \
-    case ${ARCH} in \
-        amd64)  SKYWIRE_ARCH="linux-amd64" ;; \
-        arm64)  SKYWIRE_ARCH="linux-arm64" ;; \
-        armhf)  SKYWIRE_ARCH="linux-armhf" ;; \
-        armel)  SKYWIRE_ARCH="linux-arm" ;; \
-        i386)   SKYWIRE_ARCH="linux-386" ;; \
-        *) echo "Unsupported architecture for Skywire: ${ARCH}" && exit 1 ;; \
-    esac; \
-    mkdir -p ${GOPATH}/src/github.com/skycoin \
-    && git clone https://github.com/skycoin/skywire.git ${GOPATH}/src/github.com/skycoin/skywire \
-    && cd ${GOPATH}/src/github.com/skycoin/skywire && go mod download && cd /build; \
-    wget -O /tmp/skywire.tar.gz "https://github.com/skycoin/skywire/releases/download/v${SKYWIRE_VERSION}/skywire-v${SKYWIRE_VERSION}-${SKYWIRE_ARCH}.tar.gz"; \
-    mkdir -p /opt/skywire; \
-    tar -xzf /tmp/skywire.tar.gz -C /opt/skywire; \
-    cp /opt/skywire/* /usr/local/bin/; \
-    rm -rf /tmp/skywire.tar.gz /opt/skywire
+# Install Skywire from our multi-arch image
+COPY --from=nessnetwork/skywire:latest /opt/skywire /opt/skywire
+RUN ln -s /opt/skywire/skywire-visor /usr/local/bin/skywire-visor
 
 # Install DNS Reverse Proxy binary built in dns-builder stage
 COPY --from=dns-builder /out/dns-reverse-proxy /usr/local/bin/dns-reverse-proxy

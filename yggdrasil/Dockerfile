@@ -1,20 +1,23 @@
-FROM debian:bullseye-slim
+FROM golang:1.22-bullseye AS builder
 
-ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 
-RUN apt-get update && apt-get install -y \
+WORKDIR /build
+RUN git clone https://github.com/yggdrasil-network/yggdrasil-go.git . \
+    && git checkout v0.5.12
+
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /build/yggdrasil ./cmd/yggdrasil
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /build/yggdrasilctl ./cmd/yggdrasilctl
+
+FROM alpine:latest
+
+RUN apk add --no-cache \
     ca-certificates \
-    curl \
-    iptables \
-    tar \
-    && rm -rf /var/lib/apt/lists/*
+    iptables
 
-WORKDIR /tmp
-
-RUN set -e; \
-    curl -fsSL "https://github.com/yggdrasil-network/yggdrasil-go/releases/download/v0.5.12/yggdrasil-0.5.12-vendored.tar.gz" -o yggdrasil.tar.gz; \
-    tar -xzf yggdrasil.tar.gz -C /usr/local/bin; \
-    rm yggdrasil.tar.gz
+COPY --from=builder /build/yggdrasil /usr/local/bin/yggdrasil
+COPY --from=builder /build/yggdrasilctl /usr/local/bin/yggdrasilctl
 
 EXPOSE 9001
 

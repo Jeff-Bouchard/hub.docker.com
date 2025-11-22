@@ -105,7 +105,7 @@ services:
     image: ness-network/skywire-amneziawg
     container_name: skywire-amneziawg
     ports:
-      - "8001:8000"
+      - "8002:8000"
       - "51821:51820/udp"
     restart: unless-stopped
     cap_add:

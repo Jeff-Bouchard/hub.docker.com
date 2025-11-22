@@ -21,6 +21,7 @@ docker push ${DOCKER_USER}/dns-reverse-proxy
 docker push ${DOCKER_USER}/ipfs
 docker push ${DOCKER_USER}/amneziawg
 docker push ${DOCKER_USER}/skywire-amneziawg
+docker push ${DOCKER_USER}/amnezia-exit
 docker push ${DOCKER_USER}/ness-unified
 
 echo "All images pushed successfully to ${DOCKER_USER}!"
