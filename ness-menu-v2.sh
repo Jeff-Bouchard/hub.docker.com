@@ -25,8 +25,8 @@ select_profile() {
   echo
   echo -e "${green}Select Hardware Profile:${reset}"
   echo "  1) Raspberry Pi 3 / Low Spec (Essentials Only)"
-  echo "     -> Runs: Emercoin, Privateness, Skywire, DNS, Amnezia"
-  echo "     -> Skips: Yggdrasil, I2P, Unified (Heavy/Unstable on Pi3)"
+  echo "     -> Runs: Emercoin, Privateness, Skywire, DNS, IPFS, Tools"
+  echo "     -> Skips: Amnezia, Yggdrasil, I2P, Unified (Heavy/Unstable on Pi3)"
   echo
   echo "  2) Raspberry Pi 4 / PC (Full Node)"
   echo "     -> Runs: EVERYTHING"
@@ -62,12 +62,8 @@ start_stack() {
       dns-reverse-proxy \
       pyuheprng \
       privatenesstools \
-      privatenumer \
-      amneziawg \
-      skywire-amneziawg \
-      amnezia-exit \
       ipfs
-      # Note: Yggdrasil and I2P are excluded
+      # Note: Yggdrasil, I2P, Amnezia, Privatenumer are excluded
   else
     # Start everything
     compose up -d

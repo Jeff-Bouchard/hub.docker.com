@@ -3,7 +3,7 @@ version: '3.8'
 # Minimal stack - just core services
 services:
   emercoin-core:
-    image: ness-network/emercoin-core
+    image: nessnetwork/emercoin-core
     container_name: emercoin-core
     ports:
       - "6661:6661"
@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   yggdrasil:
-    image: ness-network/yggdrasil
+    image: nessnetwork/yggdrasil
     container_name: yggdrasil
     ports:
       - "9001:9001"
@@ -25,7 +25,7 @@ services:
       - emercoin-core
 
   privateness:
-    image: ness-network/privateness
+    image: nessnetwork/privateness
     container_name: privateness
     ports:
       - "6006:6006"  # P2P

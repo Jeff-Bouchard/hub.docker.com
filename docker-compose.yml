@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   emercoin-core:
-    image: ness-network/emercoin-core
+    image: nessnetwork/emercoin-core
     container_name: emercoin-core
     ports:
       - "6661:6661"
@@ -20,7 +20,7 @@ services:
       start_period: 30s
 
   yggdrasil:
-    image: ness-network/yggdrasil
+    image: nessnetwork/yggdrasil
     container_name: yggdrasil
     ports:
       - "9001:9001"
@@ -34,7 +34,7 @@ services:
         condition: service_healthy
 
   dns-reverse-proxy:
-    image: ness-network/dns-reverse-proxy
+    image: nessnetwork/dns-reverse-proxy
     container_name: dns-reverse-proxy
     ports:
       - "53:53/udp"
@@ -52,7 +52,7 @@ services:
       - yggdrasil
 
   i2p-yggdrasil:
-    image: ness-network/i2p-yggdrasil
+    image: nessnetwork/i2p-yggdrasil
     container_name: i2p-yggdrasil
     ports:
       - "7657:7657"
@@ -73,7 +73,7 @@ services:
       - yggdrasil
 
   skywire:
-    image: ness-network/skywire
+    image: nessnetwork/skywire
     container_name: skywire
     ports:
       - "8000:8000"
@@ -85,7 +85,7 @@ services:
         condition: service_healthy
 
   amneziawg:
-    image: ness-network/amneziawg
+    image: nessnetwork/amneziawg
     container_name: amneziawg
     ports:
       - "51820:51820/udp"
@@ -102,7 +102,7 @@ services:
       - net.ipv6.conf.all.forwarding=1
 
   skywire-amneziawg:
-    image: ness-network/skywire-amneziawg
+    image: nessnetwork/skywire-amneziawg
     container_name: skywire-amneziawg
     ports:
       - "8002:8000"
@@ -119,7 +119,7 @@ services:
       - emercoin-core
 
   privateness:
-    image: ness-network/privateness
+    image: nessnetwork/privateness
     container_name: privateness
     ports:
       - "6006:6006"  # P2P
@@ -131,7 +131,7 @@ services:
       - dns-reverse-proxy
 
   pyuheprng:
-    image: ness-network/pyuheprng
+    image: nessnetwork/pyuheprng
     container_name: pyuheprng
     ports:
       - "5000:5000"
@@ -141,7 +141,7 @@ services:
         condition: service_healthy
 
   privatenumer:
-    image: ness-network/privatenumer
+    image: nessnetwork/privatenumer
     container_name: privatenumer
     ports:
       - "3000:3000"
@@ -150,7 +150,7 @@ services:
       - pyuheprng
 
   privatenesstools:
-    image: ness-network/privatenesstools
+    image: nessnetwork/privatenesstools
     container_name: privatenesstools
     ports:
       - "8888:8888"

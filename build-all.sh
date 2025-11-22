@@ -41,7 +41,7 @@ for image in "${IMAGES[@]}"; do
   fi
 
   echo "\n>>> Building ${DOCKER_USER}/${image}:latest"
-  docker build "${BUILD_ARGS[@]}" -t "${DOCKER_USER}/${image}:latest" "${context_path}"
+  docker build --progress=plain "${BUILD_ARGS[@]}" -t "${DOCKER_USER}/${image}:latest" "${context_path}"
 done
 
 echo "\nAll images built successfully."
