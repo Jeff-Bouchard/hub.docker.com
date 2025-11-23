@@ -8,6 +8,12 @@ cd "$SCRIPT_DIR"
 COMPOSE_FILE="docker-compose.yml"
 DOCKER_USER="nessnetwork"
 PROFILE="full" # Default to full, user can change
+DNS_MODE="hybrid" # icann|hybrid|emerdns
+
+DNS_LABEL_FILE="$SCRIPT_DIR/.dns_mode_labels"
+DNS_LABEL_ICANN="ICANN-only (deny EmerDNS)"
+DNS_LABEL_HYBRID="Hybrid (EmerDNS first, ICANN fallback)"
+DNS_LABEL_EMERDNS="EmerDNS-only (deny ICANN)"
 
 cyan="\033[1;36m"
 magenta="\033[1;35m"
@@ -45,6 +51,86 @@ select_profile() {
       echo "Invalid choice, keeping current: $PROFILE"
       ;;
   esac
+}
+
+load_dns_labels() {
+  if [ -f "$DNS_LABEL_FILE" ]; then
+    while IFS='=' read -r key value; do
+      value=${value%$'\r'}
+      case "$key" in
+        icann) DNS_LABEL_ICANN="$value" ;;
+        hybrid) DNS_LABEL_HYBRID="$value" ;;
+        emerdns) DNS_LABEL_EMERDNS="$value" ;;
+      esac
+    done < "$DNS_LABEL_FILE"
+  fi
+}
+
+save_dns_labels() {
+  cat > "$DNS_LABEL_FILE" <<EOF
+icann=$DNS_LABEL_ICANN
+hybrid=$DNS_LABEL_HYBRID
+emerdns=$DNS_LABEL_EMERDNS
+EOF
+}
+
+apply_dns_mode() {
+  case "$DNS_MODE" in
+    icann)
+      DNS_DESC="$DNS_LABEL_ICANN"
+      DNS_SERVERS="1.1.1.1 8.8.8.8"
+      ;;
+    emerdns)
+      DNS_DESC="$DNS_LABEL_EMERDNS"
+      DNS_SERVERS="127.0.0.1"
+      ;;
+    *)
+      DNS_MODE="hybrid"
+      DNS_DESC="$DNS_LABEL_HYBRID"
+      DNS_SERVERS="127.0.0.1 1.1.1.1"
+      ;;
+  esac
+  export DNS_MODE DNS_DESC DNS_SERVERS
+}
+
+select_dns_mode() {
+  echo
+  echo -e "${green}Select Reality / DNS Mode:${reset}"
+  echo "  0) ${DNS_LABEL_ICANN}"
+  echo "  1) ${DNS_LABEL_HYBRID}"
+  echo "  2) ${DNS_LABEL_EMERDNS}"
+  echo
+  read -rp "Select DNS mode [0-2]: " d_choice
+  case "$d_choice" in
+    0)
+      DNS_MODE="icann"
+      ;;
+    1)
+      DNS_MODE="hybrid"
+      ;;
+    2)
+      DNS_MODE="emerdns"
+      ;;
+    *)
+      echo "Invalid choice, keeping current: $DNS_MODE"
+      ;;
+  esac
+  apply_dns_mode
+  echo -e "${yellow}DNS mode set to: ${DNS_MODE} (${DNS_DESC})${reset}"
+}
+
+edit_dns_mode_labels() {
+  echo
+  echo -e "${green}Customize Reality / DNS Mode Names:${reset}"
+  read -rp "Label for ICANN-only [${DNS_LABEL_ICANN}]: " input
+  if [ -n "$input" ]; then DNS_LABEL_ICANN="$input"; fi
+  read -rp "Label for Hybrid [${DNS_LABEL_HYBRID}]: " input
+  if [ -n "$input" ]; then DNS_LABEL_HYBRID="$input"; fi
+  read -rp "Label for EmerDNS-only [${DNS_LABEL_EMERDNS}]: " input
+  if [ -n "$input" ]; then DNS_LABEL_EMERDNS="$input"; fi
+  save_dns_labels
+  apply_dns_mode
+  echo -e "${yellow}Reality mode labels updated.${reset}"
 }
 
 start_stack() {
@@ -113,6 +199,7 @@ print_info() {
   echo -e "${cyan}Disk (/)${reset}:       $disk"
   echo -e "${cyan}Docker${reset}:         $docker_status"
   echo -e "${cyan}Ness stack${reset}:     $stack"
+  echo -e "${cyan}Reality${reset}:        ${yellow}$DNS_MODE${reset} (${DNS_DESC})"
   echo -e "${cyan}Active Profile${reset}: ${yellow}$PROFILE${reset}"
   echo -e "${cyan}Docker User${reset}:    $DOCKER_USER"
 }
@@ -125,17 +212,20 @@ menu() {
     print_info
     echo
     echo -e "${green}Menu V2 (Release Mode):${reset}"
-    echo "  1) Select Hardware Profile (Current: $PROFILE)"
+    echo "  0) Reality / DNS Mode (Current: $DNS_MODE -> $DNS_DESC)"
+    echo "  1) Select Hardware/Profile (Current: $PROFILE)"
     echo "  2) Build images (Multi-Arch Release)"
     echo "  3) Start Ness Stack (Respects Profile)"
     echo "  4) Show stack status"
     echo "  5) Tail stack logs"
     echo "  6) Check entropy"
     echo "  7) Remove everything local"
-    echo "  0) Exit"
+    echo "  8) Rename Reality Modes"
+    echo "  9) Exit"
     echo
     read -rp "Select an option: " choice
     case "$choice" in
+      0) select_dns_mode ;;
       1) select_profile ;;
       2) build_images_menu ;;
       3) start_services_menu ;;
@@ -143,7 +233,8 @@ menu() {
       5) logs_stack ;;
       6) check_entropy ;;
       7) remove_everything_local ;;
-      0) exit 0 ;;
+      8) edit_dns_mode_labels ;;
+      9) exit 0 ;;
       *) echo "Invalid choice." ;;
     esac
     echo

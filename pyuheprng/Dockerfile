@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone pyuheprng repository and install package
-RUN git clone https://github.com/NESS-Network/PyUHEPRNG.git . \
+RUN git clone https://github.com/NESS-Network/PyUHEPRNG . \
     && pip install --no-cache-dir .
 
 # Environment variables for Emercoin connection

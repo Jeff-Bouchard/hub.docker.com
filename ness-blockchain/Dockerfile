@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone Ness blockchain repository
-RUN git clone https://github.com/ness-network/ness.git
+RUN git clone https://github.com/ness-network/ness
 
 # Build Privateness blockchain
 WORKDIR /build/ness

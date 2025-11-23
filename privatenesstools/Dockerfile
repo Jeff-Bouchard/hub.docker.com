@@ -6,6 +6,12 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     git \
+    build-essential \
+    python3-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libffi-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/ness-network/privatenesstools.git . \
