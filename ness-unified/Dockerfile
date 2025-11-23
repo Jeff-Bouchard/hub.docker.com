@@ -33,12 +33,6 @@ ENV PATH=$PATH:$GOPATH/bin
 
 WORKDIR /build
 
-# Install Emercoin from our multi-arch image
-COPY --from=nessnetwork/emercoin-core:latest /usr/local/bin/emercoind /usr/local/bin/emercoind
-COPY --from=nessnetwork/emercoin-core:latest /usr/local/bin/emercoin-cli /usr/local/bin/emercoin-cli
-# Try /usr/bin if /usr/local/bin fails? Docker doesn't support conditional copy.
-# Assumption: emercoin-core uses /usr/local/bin (based on previous manual install in this file moving to /usr/local/bin)
-
 # Install Yggdrasil from our multi-arch image
 COPY --from=nessnetwork/yggdrasil:latest /usr/local/bin/yggdrasil /usr/local/bin/yggdrasil
 COPY --from=nessnetwork/yggdrasil:latest /usr/local/bin/yggdrasilctl /usr/local/bin/yggdrasilctl
