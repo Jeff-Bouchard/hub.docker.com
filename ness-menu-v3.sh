@@ -7,7 +7,7 @@ cd "$SCRIPT_DIR"
 
 COMPOSE_FILE="docker-compose.yml"
 DOCKER_USER="nessnetwork"
-PROFILE="full"            # full | pi3 | mcp-server | mcp-client
+PROFILE="pi3"            # pi3 | skyminer | full | mcp-server | mcp-client
 DNS_MODE="hybrid"          # icann | hybrid | emerdns
 
 DNS_LABEL_FILE="$SCRIPT_DIR/.dns_mode_labels"
@@ -23,7 +23,15 @@ PI3_SERVICES=(
   dns-reverse-proxy
   pyuheprng
   privatenesstools
-  ipfs
+)
+
+# Skyminer profile: Pi3 essentials without the Skywire container
+SKYMINER_SERVICES=(
+  emercoin-core
+  privateness
+  dns-reverse-proxy
+  pyuheprng
+  privatenesstools
 )
 
 MCP_SERVER_SERVICES=(
@@ -133,6 +141,7 @@ edit_dns_mode_labels() {
 profile_label() {
   case "$1" in
     pi3) echo "Pi 3 Essentials" ;;
+    skyminer) echo "Skyminer (no Skywire container)" ;;
     full) echo "Full Node" ;;
     mcp-server) echo "MCP Server Suite" ;;
     mcp-client) echo "MCP Client Suite" ;;
@@ -144,16 +153,18 @@ select_profile() {
   echo
   echo -e "${green}Select Deployment Profile:${reset}"
   echo "  1) Pi 3 Essentials (Emercoin, Privateness, DNS, Skywire, Tools)"
-  echo "  2) Full Node (everything in docker-compose.yml)"
-  echo "  3) MCP Server Suite (MCP daemons, wormhole rendezvous)"
-  echo "  4) MCP Client Suite (apps, QR helpers, wormhole client)"
+  echo "  2) Skyminer (Emercoin, Privateness, DNS, Tools — no Skywire container)"
+  echo "  3) Full Node (everything in docker-compose.yml)"
+  echo "  4) MCP Server Suite (MCP daemons, wormhole rendezvous)"
+  echo "  5) MCP Client Suite (apps, QR helpers, wormhole client)"
   echo
-  read -rp "Select profile [1-4]: " p_choice
+  read -rp "Select profile [1-5]: " p_choice
   case "$p_choice" in
     1) PROFILE="pi3" ;;
-    2) PROFILE="full" ;;
-    3) PROFILE="mcp-server" ;;
-    4) PROFILE="mcp-client" ;;
+    2) PROFILE="skyminer" ;;
+    3) PROFILE="full" ;;
+    4) PROFILE="mcp-server" ;;
+    5) PROFILE="mcp-client" ;;
     *) echo "Invalid choice, keeping current: $(profile_label "$PROFILE")" ;;
   esac
   echo -e "${yellow}Profile set to: $(profile_label "$PROFILE")${reset}"
@@ -171,6 +182,61 @@ compose() {
   docker compose -f "$COMPOSE_FILE" "$@"
 }
 
+ensure_stack_stopped() {
+  require_docker || return 1
+  # If any containers exist for this compose project, stop them cleanly first
+  if compose ps -q | grep -q .; then
+    echo -e "${yellow}Existing Ness stack detected, stopping before restart...${reset}"
+    compose down
+  fi
+}
+
+cleanup_dns_reverse_proxy() {
+  require_docker || return 1
+  # If a stray dns-reverse-proxy container exists (from another project/run), stop and remove it
+  if docker ps -a --format '{{.Names}}' | grep -q '^dns-reverse-proxy$'; then
+    echo -e "${yellow}Found existing dns-reverse-proxy container, stopping to free UDP/53...${reset}"
+    docker stop dns-reverse-proxy >/dev/null 2>&1 || true
+    docker rm -f dns-reverse-proxy >/dev/null 2>&1 || true
+  fi
+}
+
+is_port53_busy() {
+  local hits=""
+  if command -v ss >/dev/null 2>&1; then
+    hits=$(ss -tulnp 2>/dev/null | awk '$5 ~ /:53$/')
+  elif command -v netstat >/dev/null 2>&1; then
+    hits=$(netstat -an 2>/dev/null | awk '$4 ~ /:53$/')
+  fi
+
+  if [ -n "$hits" ]; then
+    echo -e "${yellow}Port 53 is already in use by:${reset}"
+    echo "$hits"
+    return 0
+  fi
+
+  return 1
+}
+
+check_port53_free() {
+  # Best-effort: if ss or netstat are present, report if :53 is still bound
+  if command -v ss >/dev/null 2>&1; then
+    if ss -uln 2>/dev/null | awk '{print $5}' | grep -q ':53$'; then
+      echo -e "${yellow}Warning:${reset} UDP 53 still in use after shutdown (non-Docker or external listener)."
+    fi
+    if ss -tln 2>/dev/null | awk '{print $5}' | grep -q ':53$'; then
+      echo -e "${yellow}Warning:${reset} TCP 53 still in use after shutdown (non-Docker or external listener)."
+    fi
+  elif command -v netstat >/dev/null 2>&1; then
+    if netstat -anu 2>/dev/null | awk '{print $4}' | grep -q ':53$'; then
+      echo -e "${yellow}Warning:${reset} UDP 53 still in use after shutdown (non-Docker or external listener)."
+    fi
+    if netstat -ant 2>/dev/null | awk '{print $4}' | grep -q ':53$'; then
+      echo -e "${yellow}Warning:${reset} TCP 53 still in use after shutdown (non-Docker or external listener)."
+    fi
+  fi
+}
+
 compose_up_services() {
   local services=("$@")
   if [ ${#services[@]} -eq 0 ]; then
@@ -184,16 +250,18 @@ wait_for_emercoin_core() {
   if ! docker ps --format '{{.Names}}' | grep -q '^emercoin-core$'; then
     return 0
   fi
-  echo "Waiting for emercoin-core RPC to become healthy..."
-  for _ in {1..30}; do
-    status=$(docker inspect --format='{{.State.Health.Status}}' emercoin-core 2>/dev/null || echo "unknown")
-    if [ "$status" = "healthy" ]; then
-      echo "emercoin-core is healthy."
+  echo "Waiting for emercoin-core (emercoin-cli getblockchaininfo) to answer..."
+  # Give emercoind a head start on first boot
+  sleep 30
+  # Then up to ~2 minutes (60 * 2s) for slow first-start / sync
+  for _ in {1..60}; do
+    if docker exec emercoin-core emercoin-cli -datadir=/data getblockchaininfo >/dev/null 2>&1; then
+      echo "emercoin-core CLI is answering."
       return 0
     fi
     sleep 2
   done
-  echo "emercoin-core health check timed out (continuing)."
+  echo "emercoin-core CLI did not respond within timeout (continuing)."
 }
 
 start_stack() {
@@ -201,14 +269,37 @@ start_stack() {
   echo -e "${yellow}Starting Ness stack (Profile: $(profile_label "$PROFILE"))...${reset}"
   require_docker || return 1
 
+  # Always start from a clean slate for this compose project
+  ensure_stack_stopped || return 1
+
+   # Also ensure no leftover dns-reverse-proxy container is still binding UDP/53
+   cleanup_dns_reverse_proxy || true
+
+   # Hard-fail if port 53 is already taken by something we don't control
+   if is_port53_busy; then
+     echo -e "${red}Cannot start stack:${reset} port 53 (TCP/UDP) is already in use on the host."
+     echo -e "${yellow}Hint:${reset} check for local DNS services or previous runs holding :53."
+     return 1
+   fi
+
   case "$PROFILE" in
     pi3)
-      compose_up_services "${PI3_SERVICES[@]}" || return 1
+      # Start Emercoin core first, wait for real RPC answers, then bring up the rest
+      compose_up_services emercoin-core || return 1
       wait_for_emercoin_core || true
+      compose_up_services privateness skywire dns-reverse-proxy pyuheprng privatenesstools || return 1
+      ;;
+    skyminer)
+      # Skyminer: same as Pi3 but without the Skywire container
+      compose_up_services emercoin-core || return 1
+      wait_for_emercoin_core || true
+      compose_up_services privateness dns-reverse-proxy pyuheprng privatenesstools || return 1
       ;;
     full)
-      compose up -d || return 1
+      # For full node, still prefer Emercoin RPC readiness before the rest
+      compose up -d emercoin-core || return 1
       wait_for_emercoin_core || true
+      compose up -d || return 1
       ;;
     mcp-server)
       compose_up_services "${MCP_SERVER_SERVICES[@]}" || return 1
@@ -259,6 +350,22 @@ build_images_menu() {
     *) echo "Invalid option." ;;
   esac
 }
+
+stack_menu() {
+  echo
+  echo -e "${green}Stack Control:${reset}"
+  echo "  1) Start stack"
+  echo "  2) Stop stack"
+  echo "  0) Back"
+  echo
+  read -rp "Select option: " s_choice
+  case "$s_choice" in
+    1) start_stack ;;
+    2) compose down; cleanup_dns_reverse_proxy || true; check_port53_free ;;
+    0) return 0 ;;
+    *) echo "Invalid option." ;;
+  esac
+ }
 
 check_entropy() {
   echo -e "${yellow}Entropy check placeholder:${reset} ensure UHE 1536-bit generators are active (RC4OK + UHEPRNG)."
@@ -314,19 +421,14 @@ print_info() {
 
 logo() {
   local lines=(
-" _   _                     _   _                   _   _            "
-"| \\ | |                   | \\ | |                 | \\ | |           "
-"|  \\| | ___  ___ ___ _ __ |  \\| | ___  _ __ ___   |  \\| | _____   __"
-"| . ` |/ _ \\/ __/ _ \\ '_ \\| . ` |/ _ \\| '_ ` _ \\  | . ` |/ _ \\ \\ / /"
-"| |\\  |  __/ (_|  __/ | | | |\\  | (_) | | | | | | | |\\  |  __/\\ V / "
-"\\_| \\_/\\___|\\___\\___|_| |_|_| \\_/\\___/|_| |_| |_| \\_| \\_/\\___| \\_/  "
+"    /\\        _                "
+"   /  \\  __ _| |_ _ __ _   _   "
+"  / /\\ \\/ _' | __| '__| | | |  "
+" / ____ \\ (_| | |_| |  | |_| | "
+"\_/_    \\_\\__,_|\\__|_|   \\__,_| "
   )
-  local palette=($primary $accent $title_glow $primary $accent $title_glow)
-  local i=0
   for line in "${lines[@]}"; do
-    local color="${palette[$((i % ${#palette[@]}))]}"
-    echo -e "${panel_bg}${color}${line}${reset}"
-    ((i++))
+    echo "$line"
   done
 }
 
@@ -343,7 +445,7 @@ menu() {
       "${accent}[0]${reset} Reality / DNS Mode"
       "${accent}[1]${reset} Select Profile"
       "${accent}[2]${reset} Build images"
-      "${accent}[3]${reset} Start stack"
+      "${accent}[3]${reset} Start/stop stack"
       "${accent}[4]${reset} Show stack status"
       "${accent}[5]${reset} Tail stack logs"
       "${accent}[6]${reset} Check entropy"
@@ -362,7 +464,7 @@ menu() {
       0) select_dns_mode ;;
       1) select_profile ;;
       2) build_images_menu ;;
-      3) start_stack ;;
+      3) stack_menu ;;
       4) stack_status ;;
       5) logs_stack ;;
       6) check_entropy ;;

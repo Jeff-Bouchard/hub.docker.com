@@ -24,8 +24,8 @@ TIER2_IMAGES=(
   "ness-unified"
 )
 
-# By default we test Tier 1 + Tier 2 images only
-SELECTED_IMAGES=("${TIER1_IMAGES[@]}" "${TIER2_IMAGES[@]}")
+# By default we test Tier 1 images only (Tier 2 relies on full-stack logs)
+SELECTED_IMAGES=("${TIER1_IMAGES[@]}")
 
 # Simple ANSI colors
 red='\033[0;31m'
@@ -88,7 +88,8 @@ check_endpoint() {
       ;;
 
     *)
-      # No special check; caller should treat as generic TCP-only
+      # No special check; caller should treat as generic TCP-only and
+      # typically SKIP so the operator can inspect full stack logs instead.
       return 2
       ;;
   esac
@@ -246,13 +247,19 @@ for dockerfile in "${DOCKERFILES[@]}"; do
 
       if wait_tcp_open "$port" 20; then
         # If we have a service-specific endpoint check, run it
+        ep_rc=0
         if check_endpoint "$image_name" "$port"; then
           pass "$test_id: endpoint OK (service-specific check)"
           ((TEST_PASSED++))
-        elif [[ $? -eq 2 ]]; then
-          pass "$test_id: TCP port ${port} reachable on localhost (generic)"
-          ((TEST_PASSED++))
         else
+          ep_rc=$?
+        fi
+
+        if [[ $ep_rc -eq 2 ]]; then
+          # No endpoint defined for this image/port; rely on stack logs
+          skip "$test_id: TCP ${port} reachable, no endpoint-level check (inspect stack logs)"
+          ((TEST_SKIPPED++))
+        elif [[ $ep_rc -ne 0 ]]; then
           fail "$test_id: TCP port ${port} open but endpoint check failed"
           ((TEST_FAILED++))
         fi

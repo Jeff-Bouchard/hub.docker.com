@@ -16,7 +16,7 @@ The `pyuheprng` service aims to provide **cryptographically strong entropy** by 
 
 1. **RC4OK from Emercoin Core**: Blockchain-derived randomness (see Emercoin / RC4OK references below)
 2. **Original Hardware Bits**: Direct hardware entropy sources
-3. **UHEP (Universal Hardware Entropy Protocol)**: A software framework that aggregates hardware-level random number generation
+3. **UHEP aggregation (internal design)**: A project-specific framework that aggregates and mixes hardware-related random sources. This is an internal design choice, not a standardized external protocol.
 
 **For non-Windows machines only** - Windows uses different entropy sources.
 
@@ -27,7 +27,7 @@ The `pyuheprng` service aims to provide **cryptographically strong entropy** by 
 In Privateness, this ultra-high-entropy core is further mixed with:
 
 - Emercoin **RC4OK** blockchain randomness (block hashes, transactions, timing).
-- Multiple **hardware entropy sources** via UHEP.
+- Multiple **hardware entropy sources** via UHEP aggregation.
 - **SHA-512** cryptographic mixing before injection into `/dev/random`.
 
 Because `pyuheprng` **continuously feeds `/dev/random`** and, in the recommended configuration, `/dev/urandom` is not used for cryptographic material on this host, any local service that draws randomness from `/dev/random` is intended to benefit from:
@@ -49,7 +49,7 @@ is relatively uncommon in typical deployments we are aware of. The intent is to 
 On correctly configured hosts, this design aims to **reduce the likelihood of entropy starvation** by:
 
 - **Continuous feeding**: pyuheprng constantly feeds `/dev/random`
-- **Multiple sources**: RC4OK + hardware bits + UHEP
+- **Multiple sources**: RC4OK + hardware bits + UHEP aggregation
 - **No fallback to weak RNG**: System blocks if entropy insufficient
 - **Direct /dev/random access**: Feeds the kernel entropy pool directly rather than relying only on process-local PRNG state
 
@@ -151,13 +151,15 @@ Sources:
 - TPM (Trusted Platform Module)
 - Environmental noise
 
-#### 3. UHEP Protocol
+#### 3. UHEP aggregation (internal design)
 
-Universal Hardware Entropy Protocol:
+This section sketches an internal "UHEP" aggregation pipeline:
 - Combines multiple hardware sources
 - Cryptographic mixing
 - Continuous health monitoring
 - Automatic source validation
+
+It is an implementation concept in this project, not a standardized protocol.
 
 ### Entropy Mixing
 
@@ -194,8 +196,23 @@ The design assumes that the underlying primitives and entropy sources are crypto
 
 - RC4OK: blockchain-driven randomness as implemented by Emercoin (see Emercoin references below).
 - Hardware bits: physical entropy devices (e.g. `/dev/hwrng`, RDRAND/RDSEED, TPM).
-- UHEP: aggregation and mixing of hardware-related sources.
+- UHEP aggregation: aggregation and mixing of hardware-related sources.
 - SHA-512 mixing: cryptographic combination function.
+
+### 5. Ed25519 key generation policy (reference implementation)
+
+For Identity Bedrock / Ness identity, the **reference implementation** imposes an additional operational requirement on key generation:
+
+- Ed25519 seeds for long-lived identity keys **MUST** be generated on hosts where:
+  - `pyuheprng` is running and reporting healthy status, and
+  - `/dev/random` is being continuously fed by `pyuheprng` as described above.
+- Key generation code **MUST**:
+  - read seed material directly from `/dev/random` (or `getrandom(2)` configured equivalently), and
+  - fail fast (refuse to generate a key) if:
+    - `pyuheprng` health checks fail, or
+    - kernel entropy appears critically low for a sustained period.
+
+This does not claim that keys generated without `pyuheprng` are "insecure" in all environments; it is a **deployment profile** for this stack that treats `pyuheprng`-backed `/dev/random` as the only acceptable entropy source for Ed25519 identity seeds in production.
 
 ### 4. Reduced implicit trust in CPU/bootloader
 
@@ -332,7 +349,7 @@ services:
 | /dev/urandom | Enabled (may be misused for crypto) | **DISABLED** |
 | Entropy depletion | Possible | **Engineered to be highly unlikely under normal operation** |
 | Weak randomness | Possible | **Blocked by design (operations halt instead)** |
-| Entropy sources | CPU, bootloader (trusted) | RC4OK + Hardware + UHEP (validated) |
+| Entropy sources | CPU, bootloader (trusted) | RC4OK + Hardware + UHEP aggregation (validated) |
 | Blocking behavior | Often avoided | **Enforced when entropy is low** |
 | Security model | Best effort | **Model-driven, depends on correct deployment** |
 
@@ -354,15 +371,15 @@ The Privateness stack **greatly reduces this risk** on hosts that follow the doc
 #### /dev/random (Used by Privateness)
 ```
 Behavior: Blocks when entropy pool depleted
-Security: Cryptographically secure (always)
+Security: Cryptographically secure under standard Linux RNG assumptions once properly initialised
 Use case: Cryptographic keys, signatures, critical operations
 ```
 
 #### /dev/urandom (DISABLED in Privateness)
 ```
 Behavior: Never blocks (returns data even when depleted)
-Security: Potentially weak when pool depleted
-Use case: Non-critical randomness (NOT for crypto)
+Security: Considered suitable for cryptographic use after initialisation in mainstream Linux guidance; this project disables it by policy to avoid accidental misuse when entropy is low
+Use case: Non-critical randomness (NOT for crypto in this stack)
 ```
 
 **Privateness disables /dev/urandom** to prevent accidental use of weak randomness.
@@ -390,9 +407,9 @@ Network timing: Block arrival times, peer latency
 
 **Combined**: Cryptographically strong, blockchain-verified randomness.
 
-### UHEP Protocol
+### UHEP aggregation (conceptual sketch)
 
-Universal Hardware Entropy Protocol:
+The following shows a conceptual internal UHEP-style aggregator; not all sources are implemented, and this is illustrative rather than a stable API:
 
 ```python
 class UHEP:

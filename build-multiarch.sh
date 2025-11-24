@@ -23,6 +23,7 @@ TIER2_IMAGES=(
   "skywire-amneziawg"
   "amnezia-exit"
   "yggdrasil"
+  "ipfs"
   "i2p-yggdrasil"
   "ness-unified"
 )

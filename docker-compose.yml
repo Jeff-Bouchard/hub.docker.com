@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   emercoin-core:
     image: nessnetwork/emercoin-core
@@ -49,7 +47,6 @@ services:
     restart: unless-stopped
     depends_on:
       - emercoin-core
-      - yggdrasil
 
   i2p-yggdrasil:
     image: nessnetwork/i2p-yggdrasil
@@ -127,7 +124,6 @@ services:
     restart: unless-stopped
     depends_on:
       - emercoin-core
-      - yggdrasil
       - dns-reverse-proxy
 
   pyuheprng:

@@ -18,6 +18,11 @@ RUN set -e; \
     curl -fsSL "https://github.com/skycoin/skywire/releases/download/v1.3.31/skywire-v1.3.31-${ARCH}.tar.gz" -o skywire.tar.gz; \
     mkdir -p /opt/skywire; \
     tar -xzf skywire.tar.gz -C /opt/skywire; \
+    # Flatten extracted directory so binaries like skywire-visor live directly under /opt/skywire
+    if [ -d /opt/skywire/skywire-v1.3.31-${ARCH} ]; then \
+      mv /opt/skywire/skywire-v1.3.31-${ARCH}/* /opt/skywire/; \
+      rmdir /opt/skywire/skywire-v1.3.31-${ARCH}; \
+    fi; \
     rm skywire.tar.gz
 
 FROM alpine:latest
@@ -30,4 +35,5 @@ ENV PATH="/opt/skywire:${PATH}"
 
 EXPOSE 8000
 
-ENTRYPOINT ["skywire-visor"]
+# Generate a default config on first run under /root/.skywire, then start the visor
+ENTRYPOINT ["/bin/sh", "-c", "mkdir -p /root/.skywire; if [ ! -f /root/.skywire/skywire-config.json ]; then cd /root/.skywire && skywire cli config gen; fi; exec skywire visor -c /root/.skywire/skywire-config.json"]

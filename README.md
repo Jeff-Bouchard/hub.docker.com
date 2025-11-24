@@ -1,6 +1,6 @@
 ## Privateness Network - Docker Hub Repositories
 
-Hypersimple Docker images for Umbrel app store integration.
+Docker images for Umbrel app store integration.
 
 [Français](README-FR.md)
 
@@ -14,7 +14,7 @@ On correctly configured Linux hosts, the `pyuheprng` service feeds `/dev/random`
 
 *   **RC4OK from Emercoin Core** (blockchain-derived randomness)
 *   **Original hardware bits** (direct hardware entropy)
-*   **UHEP Protocol** (Universal Hardware Entropy Protocol)
+*   **pyuheprng / UHEPRNG** (Python integration of Steve Gibson's ultra-high-entropy UHEPRNG engine)
 
 For this profile, GRUB is configured to avoid trusting `/dev/urandom` for cryptographic material and to rely on `/dev/random` instead. This is a conservative choice specific to this project and **not** a general statement about `/dev/urandom` on Linux.
 
@@ -31,6 +31,23 @@ Without reproducible builds and a way to compare hashes, it becomes harder to:
 *   Build confidence in the behaviour of the network
 
 See [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) for the reference build profiles and verification ideas.
+
+## Security model (Bedrock)
+
+At the lowest layer, this stack is designed so that breaking its public authentication requires either **new physics** or a catastrophic failure of Emercoin consensus:
+
+- **Cryptographic floor** – We assume the existence of **one-way functions**, which in the classical PPT model is equivalent to the existence of **EUF-CMA signatures** (Rompel, STOC 1990). All public authentication (wallets, PAX, EmerSSH-style auth, Identity Switch, PoX manifests) reduces to signature verification. There is no weaker primitive that still gives public verification.
+- **Directory assumption** – We assume Emercoin's hybrid **PoS + BTC AuxPoW** consensus provides an append-only key–value directory (EmerNVS) with a costed attack model. Identity, node descriptors, binary manifests, migration hashes, incentive markers and DNS policy all live as **WORM JSON values** inside NVS.
+
+Everything else (overlay routing, containers, UX, PoX implementation details) is layered **above** these two assumptions. In particular:
+
+- **Bedrock WORM schemas** (e.g. `bedrock.account`, `bedrock.node`, `bedrock.pkg*`, `bedrock.pox_attestation`, `bedrock.benji_reward`) give structure to NVS values and are enforced by MCP servers before any write occurs.
+- **3FA incentives** – Before hostile nodes are rewarded, three independent "truth sources" must agree:
+  1. **Emercoin Bedrock** – Identity, node WORMs and package manifests must match what is on chain.
+  2. **Skycoin inventory** – Skycoin chain state defines which addresses are eligible as Skyminers (entitled to higher reward tiers).
+  3. **Execution & overlay** – PoX attestations (`pox:*`) and network metrics must show that the node is actually running the expected binaries and carrying traffic.
+
+If any factor fails, the node can still run whatever it wants, but higher-level automation (e.g. Benji rewards) will not trust it or pay it. This keeps the **mathematical bedrock (OWF/signatures + Emercoin directory)** as the only place where long-term assumptions live; everything else is replaceable infrastructure on top.
 
 ## Documentation
 
