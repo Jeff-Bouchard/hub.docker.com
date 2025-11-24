@@ -32,6 +32,16 @@ TIER3_IMAGES=(
   "privatenumer"
 )
 
+TIER4_PLATFORMS="linux/amd64,linux/arm64"
+TIER4_IMAGES=(
+  "emercoin-mcp-server"
+  "privateness-mcp-server"
+  "emercoin-mcp-app"
+  "privateness-mcp-app"
+  "magic-wormhole-suite"
+  "inspector"
+)
+
 ensure_builder() {
   if ! docker buildx inspect "$BUILDER_NAME" >/dev/null 2>&1; then
     echo "Creating buildx builder '$BUILDER_NAME'..."
@@ -74,5 +84,8 @@ build_group "$TIER2_PLATFORMS" "${TIER2_IMAGES[@]}"
 
 echo "Building Tier 3 (VOIP / WebRTC) images..."
 build_group "$TIER3_PLATFORMS" "${TIER3_IMAGES[@]}"
+
+echo "Building Tier 4 (MCP servers/apps + inspector) images..."
+build_group "$TIER4_PLATFORMS" "${TIER4_IMAGES[@]}"
 
 echo "\nAll multi-architecture images built and pushed successfully!"

@@ -272,6 +272,28 @@
       flex-wrap: wrap;
     }
 
+    .fleet-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    .fleet-table th,
+    .fleet-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      text-align: left;
+    }
+
+    .fleet-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.76rem;
+    }
+
     .stack {
       display: flex;
       flex-direction: column;
@@ -330,6 +352,36 @@
         flex: 1 1 100%;
       }
     }
+
+    @media (min-width: 1100px) {
+      .app-shell {
+        max-width: 1400px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.8fr) minmax(0, 1.4fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+          "hero hero hero"
+          "labels operations log";
+        gap: 24px;
+        align-items: flex-start;
+      }
+
+      .hero {
+        grid-area: hero;
+      }
+
+      #labelsSection {
+        grid-area: labels;
+      }
+
+      #operationsSection {
+        grid-area: operations;
+      }
+
+      #logSection {
+        grid-area: log;
+      }
+    }
   </style>
 </head>
 <body>
@@ -376,7 +428,7 @@
       </div>
     </section>
 
-    <section class="card stack">
+    <section class="card stack" id="labelsSection">
       <h3>Reality Labels</h3>
       <small>Personalize each mode to match your published narratives. Persisted via localStorage and shared with MCP clients embedding this UI.</small>
       <form class="dns-form" id="dnsForm">
@@ -442,6 +494,26 @@
           <footer>
             <button type="button" class="button-danger" data-action="nuke-local">Remove everything</button>
           </footer>
+        </article>
+        <article class="action-card">
+          <h4>Fleet rewards (coming soon)</h4>
+          <p>Per-node Skywire identity and rewards accounting from Privateness + Skywire controllers.</p>
+          <table class="fleet-table">
+            <thead>
+              <tr>
+                <th>Node</th>
+                <th>Skywire pubkey</th>
+                <th>Last seen</th>
+                <th>Skywire rewards paid</th>
+                <th>Privateness rewards paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="5">Coming soon – wired in Menu V4 to the controller and rewards indexer.</td>
+              </tr>
+            </tbody>
+          </table>
         </article>
         <article class="action-card">
           <h4>Reality labels</h4>

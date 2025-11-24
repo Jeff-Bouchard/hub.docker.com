@@ -36,20 +36,20 @@ See [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) for the reference build pro
 
 ### Core Documentation
 
-*   [**SERVICES.md**](SERVICES.md) - Complete service list, dependencies, ports, use cases
-*   [**DEPLOY.md**](DEPLOY.md) - Docker Hub deployment instructions (nessnetwork)
-*   [**PORTAINER.md**](PORTAINER.md) - Portainer deployment guide, stack management
+*   [**SERVICES.md**](doc/SERVICES.md) - Complete service list, dependencies, ports, use cases
+*   [**DEPLOY.md**](doc/DEPLOY.md) - Docker Hub deployment instructions (nessnetwork)
+*   [**PORTAINER.md**](doc/PORTAINER.md) - Portainer deployment guide, stack management
 
 ### Security Architecture
 
-*   [**CRYPTOGRAPHIC-SECURITY.md**](CRYPTOGRAPHIC-SECURITY.md) - Entropy architecture, pyuheprng, GRUB configuration
-*   [**REPRODUCIBLE-BUILDS.md**](REPRODUCIBLE-BUILDS.md) - Binary equivalence, deterministic builds, verification
-*   [**INCENTIVE-SECURITY.md**](INCENTIVE-SECURITY.md) - Trustless payment to hostile nodes, game theory
+*   [**CRYPTOGRAPHIC-SECURITY.md**](doc/CRYPTOGRAPHIC-SECURITY.md) - Entropy architecture, pyuheprng, GRUB configuration
+*   [**REPRODUCIBLE-BUILDS.md**](doc/REPRODUCIBLE-BUILDS.md) - Binary equivalence, deterministic builds, verification
+*   [**INCENTIVE-SECURITY.md**](doc/INCENTIVE-SECURITY.md) - Trustless payment to hostile nodes, game theory
 
 ### Network Architecture Overview
 
-*   [**NETWORK-ARCHITECTURE.md**](NETWORK-ARCHITECTURE.md) - Protocol hopping, MPLS routing, untraceability
-*   [**ARCHITECTURE.md**](ARCHITECTURE.md) - Multi-architecture build details
+*   [**NETWORK-ARCHITECTURE.md**](doc/NETWORK-ARCHITECTURE.md) - Protocol hopping, MPLS routing, untraceability
+*   [**ARCHITECTURE.md**](doc/ARCHITECTURE.md) - Multi-architecture build details
 
 ### Service-Specific
 
@@ -57,7 +57,7 @@ See [REPRODUCIBLE-BUILDS.md](REPRODUCIBLE-BUILDS.md) for the reference build pro
 *   [**pyuheprng/README.md**](pyuheprng/README.md) - Entropy service documentation
 *   [**amneziawg/README.md**](amneziawg/README.md) - Stealth VPN configuration
 *   [**skywire-amneziawg/README.md**](skywire-amneziawg/README.md) - Access layer integration
-*   [**CONCEPT.md**](CONCEPT.md) - Perception/Reality architecture notes
+*   [**CONCEPT.md**](doc/CONCEPT.md) - Perception/Reality architecture notes
 
 ## Perception → Reality Concept
 
@@ -331,4 +331,4 @@ docker login
 
 For the external specifications and documentation that underpin this stack (Linux RNG behavior, UHEPRNG, Emercoin RC4OK/EmerDNS/EmerNVS, Yggdrasil, I2P, WireGuard/AmneziaWG, IPFS, Windows NRPT, reproducible builds), see:
 
-- `SOURCES.md` in this repository – consolidated reference list
+- `doc/SOURCES.md` in this repository – consolidated reference list
