@@ -11,7 +11,19 @@ if [[ "${NO_CACHE:-0}" != "0" ]]; then
 fi
 
 # Keep the build order deterministic so dependency images are prepared first.
-IMAGES=(
+# Pi 3 Essentials profile (as used by ness-menu-v3.sh)
+PI3_IMAGES=(
+  "emercoin-core"
+  "yggdrasil"
+  "dns-reverse-proxy"
+  "skywire"
+  "privateness"
+  "pyuheprng"
+  "privatenesstools"
+)
+
+# Full image set (includes extras beyond the Pi3 profile)
+DEFAULT_IMAGES=(
   "emercoin-core"
   "yggdrasil"
   "dns-reverse-proxy"
@@ -29,6 +41,12 @@ IMAGES=(
   "amnezia-exit"
   "ness-unified"
 )
+
+if [[ "${PI3_ONLY:-0}" != "0" ]]; then
+  IMAGES=("${PI3_IMAGES[@]}")
+else
+  IMAGES=("${DEFAULT_IMAGES[@]}")
+fi
 
 echo "Building ${#IMAGES[@]} images for namespace '${DOCKER_USER}'..."
 
