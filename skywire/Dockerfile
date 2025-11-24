@@ -36,4 +36,4 @@ ENV PATH="/opt/skywire:${PATH}"
 EXPOSE 8000
 
 # Generate a default config on first run under /root/.skywire, then start the visor
-ENTRYPOINT ["/bin/sh", "-c", "mkdir -p /root/.skywire; if [ ! -f /root/.skywire/skywire-config.json ]; then cd /root/.skywire && skywire cli config gen; fi; exec skywire visor -c /root/.skywire/skywire-config.json"]
+ENTRYPOINT ["/bin/sh", "-c", "mkdir -p /root/.skywire; if [ ! -f /root/.skywire/skywire-config.json ]; then cd /root/.skywire && skywire-cli config gen; fi; exec skywire visor -c /root/.skywire/skywire-config.json"]

@@ -154,7 +154,7 @@ select_profile() {
   echo -e "${green}Select Deployment Profile:${reset}"
   echo "  1) Pi 3 Essentials (Emercoin, Privateness, DNS, Skywire, Tools)"
   echo "  2) Skyminer (Emercoin, Privateness, DNS, Tools — no Skywire container)"
-  echo "  3) Full Node (everything in docker-compose.yml)"
+  echo "  3) Full Node (Emercoin, Yggdrasil, I2P-Yggdrasil, Skywire, AmneziaWG, Skywire-AmneziaWG, DNS, pyuheprng, Privateness, Privatenumer, Privatenesstools)"
   echo "  4) MCP Server Suite (MCP daemons, wormhole rendezvous)"
   echo "  5) MCP Client Suite (apps, QR helpers, wormhole client)"
   echo
@@ -250,11 +250,14 @@ wait_for_emercoin_core() {
   if ! docker ps --format '{{.Names}}' | grep -q '^emercoin-core$'; then
     return 0
   fi
+  local headstart=${EMC_HEADSTART:-45}
+  local max_tries=${EMC_MAX_TRIES:-90}
   echo "Waiting for emercoin-core (emercoin-cli getblockchaininfo) to answer..."
   # Give emercoind a head start on first boot
-  sleep 30
+  sleep "$headstart"
   # Then up to ~2 minutes (60 * 2s) for slow first-start / sync
-  for _ in {1..60}; do
+  local i
+  for ((i=1; i<=max_tries; i++)); do
     if docker exec emercoin-core emercoin-cli -datadir=/data getblockchaininfo >/dev/null 2>&1; then
       echo "emercoin-core CLI is answering."
       return 0
