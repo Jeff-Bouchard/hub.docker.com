@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-ness-theme="dark">
+<html lang="fr" data-ness-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>NESS Menu V3</title>
+  <title>Menu NESS V3</title>
   <style>
     :root {
       --bg-primary: #020409;
@@ -395,157 +395,157 @@
 | |\  |  __/ (_|  __/ | | | |\  | (_) | | | | | | | |\  |  __/\ V / 
 \_| \_/\___|\___\___|_| |_|_| \_/\___/|_| |_| |_| \_| \_/\___| \_/  </pre>
         <div class="badges">
-          <div class="badge" id="realityBadge"><strong>Reality</strong><span data-role="reality-text">Hybrid → EmerDNS first</span></div>
-          <div class="badge" id="profileBadge"><strong>Profile</strong><span data-role="profile-text">Pi 3 Essentials</span></div>
-          <div class="badge"><strong>MCP Ready</strong><span>Server + Client profiles onboard</span></div>
+          <div class="badge" id="realityBadge"><strong>Réalité</strong><span data-role="reality-text">Hybride → EmerDNS d'abord</span></div>
+          <div class="badge" id="profileBadge"><strong>Profil</strong><span data-role="profile-text">Pi 3 Essentiels</span></div>
+          <div class="badge"><strong>Prêt MCP</strong><span>Profils Serveur + Client disponibles</span></div>
         </div>
       </div>
 
       <div class="control-grid" style="margin-top: 26px;">
         <div class="card stack">
-          <h3>API Endpoint</h3>
-          <small>Point this UI at the Ness automation endpoint that proxies CLI actions.</small>
+          <h3>Point de terminaison API</h3>
+          <small>Pointez cette UI vers l'API Ness qui relaie les actions du menu.</small>
           <div class="api-row">
-            <input type="url" id="apiBase" placeholder="https://node.example.org/api/menu" />
-            <button type="button" class="button-secondary" id="saveEndpoint">Set</button>
+            <input type="url" id="apiBase" placeholder="https://noeud.exemple.org/api/menu" />
+            <button type="button" class="button-secondary" id="saveEndpoint">Définir</button>
           </div>
-          <small id="endpointStatus" class="log-info">No endpoint configured. Actions will stay local.</small>
+          <small id="endpointStatus" class="log-info">Aucun endpoint configuré. Les actions restent locales (simulation).</small>
         </div>
         <div class="card">
-          <h3>Reality / DNS Mode</h3>
-          <small>Select the worldview enforced across agents and DNS resolvers.</small>
+          <h3>Mode Réalité / DNS</h3>
+          <small>Sélectionnez la vision du monde appliquée aux agents et résolveurs DNS.</small>
           <div class="pill-group" id="realityButtons">
-            <button type="button" data-mode="icann">ICANN-only</button>
-            <button type="button" data-mode="hybrid">Hybrid</button>
-            <button type="button" data-mode="emerdns">EmerDNS-only</button>
+            <button type="button" data-mode="icann">ICANN uniquement</button>
+            <button type="button" data-mode="hybrid">Hybride</button>
+            <button type="button" data-mode="emerdns">EmerDNS uniquement</button>
           </div>
         </div>
         <div class="card">
-          <h3>Deployment Profile</h3>
-          <small>Hardware/service bundle that Start Stack will orchestrate.</small>
+          <h3>Profil de déploiement</h3>
+          <small>Ensemble matériel / services que "Démarrer le stack" va orchestrer.</small>
           <div class="profile-grid" id="profileCards"></div>
         </div>
       </div>
     </section>
 
     <section class="card stack" id="labelsSection">
-      <h3>Reality Labels</h3>
-      <small>Personalize each mode to match your published narratives. Persisted via localStorage and shared with MCP clients embedding this UI.</small>
+      <h3>Libellés de Réalité</h3>
+      <small>Personnalisez chaque mode. Sauvegardé en localStorage et réutilisé par les clients MCP.</small>
       <form class="dns-form" id="dnsForm">
         <label>
-          <span>ICANN-only</span>
+          <span>ICANN uniquement</span>
           <input type="text" name="icann" required />
         </label>
         <label>
-          <span>Hybrid</span>
+          <span>Hybride</span>
           <input type="text" name="hybrid" required />
         </label>
         <label>
-          <span>EmerDNS-only</span>
+          <span>EmerDNS uniquement</span>
           <input type="text" name="emerdns" required />
         </label>
-        <button type="submit">Save labels</button>
+        <button type="submit">Enregistrer les libellés</button>
       </form>
     </section>
 
     <section class="card stack">
-      <h3>Operations Console</h3>
-      <small>HTML port of Menu V3 actions. Buttons send signed intents to your automation endpoint together with current profile + reality context.</small>
+      <h3>Console d'opérations</h3>
+      <small>Port HTML du Menu V3. Les boutons envoient des intentions vers votre endpoint d'automatisation.</small>
       <div class="actions-grid">
         <article class="action-card">
-          <h4>Build images</h4>
-          <p>Kick off Docker build pipelines with full multi-arch visibility.</p>
+          <h4>Construire les images</h4>
+          <p>Lance les builds Docker (multi-arch si supporté).</p>
           <footer>
             <button type="button" class="button-secondary" data-action="build-all" data-payload='{"script":"build-all.sh"}'>build-all.sh</button>
             <button type="button" class="button-secondary" data-action="build-multiarch" data-payload='{"script":"build-multiarch.sh"}'>build-multiarch.sh</button>
           </footer>
           <div class="stack" style="margin-top: 10px;">
-            <small>Single image (mirrors CLI per-image build):</small>
+            <small>Image unique (équivalent au build par image du CLI) :</small>
             <div class="api-row">
               <select id="singleImageSelect">
-                <option value="">Select image…</option>
+                <option value="">Choisir une image…</option>
               </select>
-              <button type="button" class="button-secondary" id="buildSingleImageBtn">Build selected</button>
+              <button type="button" class="button-secondary" id="buildSingleImageBtn">Construire la sélection</button>
             </div>
           </div>
         </article>
         <article class="action-card">
-          <h4>Start stack</h4>
-          <p>Start only the services that belong to the selected profile.</p>
+          <h4>Stack</h4>
+          <p>Démarre ou arrête uniquement les services du profil sélectionné.</p>
           <footer>
-            <button type="button" data-action="start-stack">Start</button>
-            <button type="button" class="button-secondary" data-action="stop-stack">Stop</button>
+            <button type="button" data-action="start-stack">Démarrer</button>
+            <button type="button" class="button-secondary" data-action="stop-stack">Arrêter</button>
           </footer>
         </article>
         <article class="action-card">
-          <h4>Stack status</h4>
-          <p>Inspect docker compose state the same way the CLI option 4 does.</p>
+          <h4>Statut du stack</h4>
+          <p>Inspecte l'état docker compose (équivalent option 4 du menu CLI).</p>
           <footer>
-            <button type="button" data-action="stack-status">Show status</button>
+            <button type="button" data-action="stack-status">Afficher le statut</button>
           </footer>
         </article>
         <article class="action-card">
-          <h4>Tail logs</h4>
-          <p>Stream logs across all services; best piped into MCP log analyzers.</p>
+          <h4>Logs</h4>
+          <p>Stream des logs de tous les services.</p>
           <footer>
-            <button type="button" data-action="tail-logs">Tail logs</button>
+            <button type="button" data-action="tail-logs">Suivre les logs</button>
           </footer>
         </article>
         <article class="action-card">
-          <h4>Entropy audit</h4>
-          <p>Verify that UHE generators (RC4OK + UHEPRNG) are online.</p>
+          <h4>Audit d'entropie</h4>
+          <p>Vérifie que les générateurs UHE (RC4OK + UHEPRNG) sont actifs.</p>
           <footer>
-            <button type="button" data-action="check-entropy">Check entropy</button>
+            <button type="button" data-action="check-entropy">Vérifier l'entropie</button>
           </footer>
         </article>
         <article class="action-card">
-          <h4>Remove local state</h4>
-          <p>Stop containers, remove volumes, prune caches. Use with caution.</p>
+          <h4>Supprimer l'état local</h4>
+          <p>Stoppe les conteneurs, supprime volumes et cache. À utiliser avec précaution.</p>
           <footer>
-            <button type="button" class="button-danger" data-action="nuke-local">Remove everything</button>
+            <button type="button" class="button-danger" data-action="nuke-local">Tout supprimer localement</button>
           </footer>
         </article>
         <article class="action-card">
-          <h4>Fleet rewards (coming soon)</h4>
-          <p>Per-node Skywire identity and rewards accounting from Privateness + Skywire controllers.</p>
+          <h4>Récompenses de flotte (bientôt)</h4>
+          <p>Identité Skywire par nœud et comptabilité des récompenses depuis les contrôleurs.</p>
           <table class="fleet-table">
             <thead>
               <tr>
-                <th>Node</th>
-                <th>Skywire pubkey</th>
-                <th>Last seen</th>
-                <th>Skywire rewards paid</th>
-                <th>Privateness rewards paid</th>
+                <th>Nœud</th>
+                <th>Pubkey Skywire</th>
+                <th>Dernière vue</th>
+                <th>Récompenses Skywire</th>
+                <th>Récompenses Privateness</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="5">Coming soon – wired in Menu V4 to the controller and rewards indexer.</td>
+                <td colspan="5">Bientôt – câblé dans Menu V4 vers le contrôleur et l'indexeur de récompenses.</td>
               </tr>
             </tbody>
           </table>
         </article>
         <article class="action-card">
-          <h4>Reality labels</h4>
-          <p>Sync label changes downstream (mirrors CLI option 8).</p>
+          <h4>Synchroniser les libellés</h4>
+          <p>Propage les changements de libellés de Réalité (équivalent option 8).</p>
           <footer>
-            <button type="button" data-action="sync-labels">Sync labels</button>
+            <button type="button" data-action="sync-labels">Synchroniser</button>
           </footer>
         </article>
         <article class="action-card">
-          <h4>Exit session</h4>
-          <p>Signal remote agents that this operator UI is closing.</p>
+          <h4>Quitter la session</h4>
+          <p>Signale aux agents distants que cette UI opérateur se ferme.</p>
           <footer>
-            <button type="button" data-action="exit">Exit</button>
+            <button type="button" data-action="exit">Quitter</button>
           </footer>
         </article>
       </div>
     </section>
 
     <section class="card stack">
-      <h3>Action Log</h3>
-      <small>Responses from the automation endpoint land here. Useful for MCP agents parsing JSON.</small>
-      <pre id="actionLog">Ready. Configure an endpoint or operate locally.</pre>
+      <h3>Journal d'actions</h3>
+      <small>Les réponses de l'endpoint d'automatisation apparaissent ici.</small>
+      <pre id="actionLog">Prêt. Configurez un endpoint ou restez en mode local.</pre>
     </section>
   </main>
 
@@ -558,31 +558,31 @@
     };
 
     const DEFAULT_LABELS = {
-      icann: "ICANN-only (deny EmerDNS)",
-      hybrid: "Hybrid (EmerDNS first, ICANN fallback)",
-      emerdns: "EmerDNS-only (deny ICANN)"
+      icann: "ICANN uniquement (refuser EmerDNS)",
+      hybrid: "Hybride (EmerDNS d'abord, retour ICANN)",
+      emerdns: "EmerDNS uniquement (refuser ICANN)"
     };
 
     const PROFILES = {
       pi3: {
-        title: "Pi 3 Essentials",
-        desc: "Emercoin, Privateness, DNS, Skywire, Tools",
+        title: "Pi 3 Essentiels",
+        desc: "Emercoin, Privateness, DNS, Skywire, Outils",
       },
       skyminer: {
         title: "Skyminer",
-        desc: "Emercoin, Privateness, DNS, Tools — no Skywire container",
+        desc: "Emercoin, Privateness, DNS, Outils — sans conteneur Skywire",
       },
       full: {
-        title: "Full Node",
+        title: "Nœud complet",
         desc: "Emercoin, Yggdrasil, I2P-Yggdrasil, Skywire, AmneziaWG, Skywire-AmneziaWG, DNS, pyuheprng, Privateness, Privatenumer, Privatenesstools",
       },
       "mcp-server": {
-        title: "MCP Server Suite",
-        desc: "MCP daemons, Magic Wormhole rendezvous",
+        title: "Suite Serveur MCP",
+        desc: "Démons MCP, rendez-vous Magic Wormhole",
       },
       "mcp-client": {
-        title: "MCP Client Suite",
-        desc: "Apps, QR helpers, Magic Wormhole client",
+        title: "Suite Client MCP",
+        desc: "Applications, aides QR, client Magic Wormhole",
       }
     };
 
@@ -674,7 +674,6 @@
 
     function populateSingleImageSelect() {
       if (!refs.singleImageSelect) return;
-      // Clear any existing options except placeholder
       refs.singleImageSelect.querySelectorAll("option:not(:first-child)").forEach(opt => opt.remove());
       SINGLE_IMAGES.forEach(name => {
         const opt = document.createElement("option");
@@ -690,7 +689,7 @@
       state.dnsMode = btn.dataset.mode;
       persist();
       renderRealityButtons();
-      log(`Reality mode switched to ${state.dnsLabels[state.dnsMode]}`, "success");
+      log(`Mode Réalité basculé sur ${state.dnsLabels[state.dnsMode]}`, "success");
     });
 
     refs.dnsForm.addEventListener("submit", (event) => {
@@ -702,21 +701,21 @@
       };
       persist();
       renderRealityButtons();
-      log("Reality labels updated.", "success");
+      log("Libellés de Réalité mis à jour.", "success");
     });
 
     refs.saveEndpoint.addEventListener("click", () => {
       state.endpoint = refs.apiBase.value.trim();
       persist();
       updateEndpointStatus();
-      log(state.endpoint ? `Endpoint set to ${state.endpoint}` : "Endpoint cleared. Actions stay local.", "info");
+      log(state.endpoint ? `Endpoint défini sur ${state.endpoint}` : "Endpoint effacé. Actions locales uniquement.", "info");
     });
 
     if (refs.buildSingleImageBtn) {
       refs.buildSingleImageBtn.addEventListener("click", () => {
         const image = refs.singleImageSelect?.value || "";
         if (!image) {
-          log("Select an image to build first.", "error");
+          log("Choisissez d'abord une image à construire.", "error");
           return;
         }
         callMenuAction("build-image", { image });
@@ -725,10 +724,10 @@
 
     function updateEndpointStatus() {
       if (state.endpoint) {
-        refs.endpointStatus.textContent = `Sending POST payloads to ${state.endpoint}`;
+        refs.endpointStatus.textContent = `Envoi des POST vers ${state.endpoint}`;
         refs.endpointStatus.className = "log-success";
       } else {
-        refs.endpointStatus.textContent = "No endpoint configured. Actions will remain local (simulation mode).";
+        refs.endpointStatus.textContent = "Aucun endpoint configuré. Actions en mode local (simulation).";
         refs.endpointStatus.className = "log-info";
       }
     }
@@ -752,10 +751,10 @@
         ...payload
       };
 
-      log(`Dispatching action ${action} with payload ${JSON.stringify(payload)}`, "info");
+      log(`Dispatch action ${action} avec payload ${JSON.stringify(payload)}`, "info");
 
       if (!state.endpoint) {
-        log("Endpoint missing: configure API endpoint to forward action.", "error");
+        log("Endpoint manquant : configurez un endpoint API pour exécuter l'action.", "error");
         return;
       }
 
@@ -782,7 +781,7 @@
 
         log(typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2), "success");
       } catch (error) {
-        log(`Error: ${error.message}`, "error");
+        log(`Erreur: ${error.message}`, "error");
       }
     }
 
@@ -794,7 +793,7 @@
           try {
             payload = JSON.parse(raw);
           } catch (err) {
-            log(`Invalid payload JSON: ${err.message}`, "error");
+            log(`Payload JSON invalide: ${err.message}`, "error");
           }
         }
         callMenuAction(button.dataset.action, payload);
