@@ -650,6 +650,78 @@ test_skywire() {
   check_tcp_port 127.0.0.1 8000 "Skywire visor"
 }
 
+test_yggdrasil() {
+  echo
+  echo -e "${yellow}Testing Yggdrasil container status...${reset}"
+  local status
+  status=$(service_status "yggdrasil")
+  if [ "$status" = "RUNNING" ]; then
+    echo -e " ${green}${check_ok_symbol}${reset} yggdrasil container RUNNING"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} yggdrasil container status: $status"
+    return 1
+  fi
+}
+
+test_i2p_yggdrasil() {
+  echo
+  echo -e "${yellow}Testing i2p-yggdrasil services (port 7657)...${reset}"
+  if ! docker ps --format '{{.Names}}' | grep -q '^i2p-yggdrasil$'; then
+    echo -e " ${red}${check_fail_symbol}${reset} i2p-yggdrasil container not running"
+    return 1
+  fi
+  local rc=0
+  check_tcp_port 127.0.0.1 7657 "i2p-yggdrasil I2P console" || rc=1
+  if [ "$rc" -ne 0 ]; then
+    return 1
+  fi
+}
+
+test_amneziawg() {
+  echo
+  echo -e "${yellow}Testing AmneziaWG container status...${reset}"
+  local status
+  status=$(service_status "amneziawg")
+  if [ "$status" = "RUNNING" ]; then
+    echo -e " ${green}${check_ok_symbol}${reset} amneziawg container RUNNING"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} amneziawg container status: $status"
+    return 1
+  fi
+}
+
+test_skywire_amneziawg() {
+  echo
+  echo -e "${yellow}Testing Skywire-AmneziaWG visor HTTP (port 8002)...${reset}"
+  if ! docker ps --format '{{.Names}}' | grep -q '^skywire-amneziawg$'; then
+    echo -e " ${red}${check_fail_symbol}${reset} skywire-amneziawg container not running"
+    return 1
+  fi
+  check_tcp_port 127.0.0.1 8002 "Skywire-AmneziaWG visor"
+}
+
+test_full_node_overlays() {
+  echo
+  echo -e "${yellow}Full node overlay/VPN services (Yggdrasil, I2P-Yggdrasil, Skywire, AmneziaWG, Skywire-AmneziaWG)...${reset}"
+  require_docker || return 1
+  local rc=0
+
+  test_yggdrasil || rc=1
+  test_i2p_yggdrasil || rc=1
+  test_skywire || rc=1
+  test_amneziawg || rc=1
+  test_skywire_amneziawg || rc=1
+
+  echo
+  if [ "$rc" -eq 0 ]; then
+    echo -e "${green}===== FULL NODE OVERLAYS: OK =====${reset}"
+  else
+    echo -e "${red}===== FULL NODE OVERLAYS: ISSUES DETECTED =====${reset}"
+  fi
+
+  return "$rc"
+}
+
 health_check() {
   echo
   echo -e "${yellow}Core node health check...${reset}"
@@ -842,6 +914,7 @@ test_menu() {
     echo "  3) Test pyuheprng (port 5000)"
     echo "  4) Test dns-reverse-proxy (ports ${DNS_PROXY_HOST_PORT}/8053)"
     echo "  5) Test Skywire visor (port 8000)"
+    echo "  6) Full node overlay/VPN services"
     echo "  0) Back"
     echo
     read -rp "Select an option: " choice
@@ -851,6 +924,7 @@ test_menu() {
       3) test_pyuheprng ;;
       4) test_dns_reverse_proxy ;;
       5) test_skywire ;;
+      6) test_full_node_overlays ;;
       0) return 0 ;;
       *) echo "Invalid choice." ;;
     esac
@@ -922,7 +996,7 @@ menu() {
     print_info
     echo
     echo -e "${panel_bg}${panel_border}╔══════════════════╦═══════════════════════════════╗${reset}"
-    printf "%b║ %bMenu V3%b          ║ %bReality:%b %s → %s%b\n" "$panel_bg" "$primary" "$panel_border" "$muted" "$accent" "$DNS_MODE" "$DNS_DESC" "$reset"
+    printf "%b║ %bMenu V4%b          ║ %bReality:%b %s → %s%b\n" "$panel_bg" "$primary" "$panel_border" "$muted" "$accent" "$DNS_MODE" "$DNS_DESC" "$reset"
     echo -e "${panel_bg}${panel_border}╠══════════════════╩═══════════════════════════════╣${reset}"
 
     local menu_items=(
