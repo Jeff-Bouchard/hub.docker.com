@@ -664,18 +664,22 @@ health_check() {
   fi
 
   echo
-  echo "== Privateness JSON-RPC (port 6660) =="
-  local priv_rpc
-  priv_rpc=$(curl -s -X POST \
-    -H 'content-type: text/plain;' \
-    --data-binary '{"jsonrpc":"1.0","id":"ness-health","method":"getinfo","params":[]}' \
-    http://127.0.0.1:6660/ 2>/dev/null || true)
-  if echo "$priv_rpc" | grep -q '"result"'; then
-    echo "$priv_rpc" | tr '\n' ' ' | sed 's/  */ /g' | head -c 200; echo
-    echo -e " ${green}${check_ok_symbol}${reset} Privateness JSON-RPC responding on 6660"
+  echo "== Privateness JSON-RPC (via privateness-cli / port 6660) =="
+  local priv_rpc_out priv_rpc_rc
+  priv_rpc_rc=0
+  if [ -x "${SCRIPT_DIR}/privateness-cli" ]; then
+    priv_rpc_out=$("${SCRIPT_DIR}/privateness-cli" status 2>&1) || priv_rpc_rc=$?
   else
-    echo "$priv_rpc" | head -c 200; echo
-    echo -e " ${red}${check_fail_symbol}${reset} Privateness JSON-RPC failed on 6660"
+    priv_rpc_out=$(docker exec privateness privateness-cli status 2>&1) || priv_rpc_rc=$?
+  fi
+
+  if [ "$priv_rpc_rc" -eq 0 ] && echo "$priv_rpc_out" | grep -q '"seq"'; then
+    echo "$priv_rpc_out" | grep -E 'seq|block_hash' || echo "$priv_rpc_out" | head -c 200
+    echo
+    echo -e " ${green}${check_ok_symbol}${reset} Privateness JSON-RPC responding via privateness-cli"
+  else
+    echo "$priv_rpc_out" | head -c 200; echo
+    echo -e " ${red}${check_fail_symbol}${reset} Privateness JSON-RPC check failed via privateness-cli"
     rpc_rc=1
   fi
 
@@ -698,10 +702,11 @@ health_check() {
     echo "$local_status" | grep -E 'seq|block_hash' || true
 
     local exp_seq loc_seq exp_hash loc_hash
-    exp_seq=$(echo "$explorer_health" | grep -o '"seq":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
-    loc_seq=$(echo "$local_status" | grep -o '"seq":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
-    exp_hash=$(echo "$explorer_health" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]' | head -n1)
-    loc_hash=$(echo "$local_status" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]' | head -n1)
+    # Use more tolerant patterns that allow whitespace around the colon, e.g. "block_hash": "..."
+    exp_seq=$(echo "$explorer_health" | grep -m1 '"seq"' | tr -dc '0-9')
+    loc_seq=$(echo "$local_status"   | grep -m1 '"seq"' | tr -dc '0-9')
+    exp_hash=$(echo "$explorer_health" | grep -m1 '"block_hash"' | sed 's/.*"block_hash"[[:space:]]*:[[:space:]]*"//;s/".*//' | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]')
+    loc_hash=$(echo "$local_status"   | grep -m1 '"block_hash"' | sed 's/.*"block_hash"[[:space:]]*:[[:space:]]*"//;s/".*//' | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]')
 
     if [ -n "$exp_seq" ] && [ -n "$loc_seq" ] && [ "$exp_seq" = "$loc_seq" ] && \
        [ -n "$exp_hash" ] && [ -n "$loc_hash" ] && [ "$exp_hash" = "$loc_hash" ]; then
