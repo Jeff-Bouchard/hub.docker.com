@@ -10,6 +10,9 @@ DOCKER_USER="nessnetwork"
 PROFILE="pi3"            # pi3 | skyminer | full | mcp-server | mcp-client
 DNS_MODE="hybrid"          # icann | hybrid | emerdns
 
+# Host port used for the dns-reverse-proxy listener (matches docker-compose.yml)
+DNS_PROXY_HOST_PORT="${DNS_PROXY_HOST_PORT:-1053}"
+
 DNS_LABEL_FILE="$SCRIPT_DIR/.dns_mode_labels"
 DNS_LABEL_ICANN="ICANN-only (deny EmerDNS)"
 DNS_LABEL_HYBRID="Hybrid (EmerDNS first, ICANN fallback)"
@@ -204,13 +207,13 @@ cleanup_dns_reverse_proxy() {
 is_port53_busy() {
   local hits=""
   if command -v ss >/dev/null 2>&1; then
-    hits=$(ss -tulnp 2>/dev/null | awk '$5 ~ /:53$/')
+    hits=$(ss -tulnp 2>/dev/null | grep -E ":${DNS_PROXY_HOST_PORT}$")
   elif command -v netstat >/dev/null 2>&1; then
-    hits=$(netstat -an 2>/dev/null | awk '$4 ~ /:53$/')
+    hits=$(netstat -an 2>/dev/null | grep -E ":${DNS_PROXY_HOST_PORT}$")
   fi
 
   if [ -n "$hits" ]; then
-    echo -e "${yellow}Port 53 is already in use by:${reset}"
+    echo -e "${yellow}Port ${DNS_PROXY_HOST_PORT} is already in use by:${reset}"
     echo "$hits"
     return 0
   fi
@@ -219,20 +222,20 @@ is_port53_busy() {
 }
 
 check_port53_free() {
-  # Best-effort: if ss or netstat are present, report if :53 is still bound
+  # Best-effort: if ss or netstat are present, report if the DNS listener port is still bound
   if command -v ss >/dev/null 2>&1; then
-    if ss -uln 2>/dev/null | awk '{print $5}' | grep -q ':53$'; then
-      echo -e "${yellow}Warning:${reset} UDP 53 still in use after shutdown (non-Docker or external listener)."
+    if ss -uln 2>/dev/null | awk '{print $5}' | grep -q ":${DNS_PROXY_HOST_PORT}$"; then
+      echo -e "${yellow}Warning:${reset} UDP ${DNS_PROXY_HOST_PORT} still in use after shutdown (non-Docker or external listener)."
     fi
-    if ss -tln 2>/dev/null | awk '{print $5}' | grep -q ':53$'; then
-      echo -e "${yellow}Warning:${reset} TCP 53 still in use after shutdown (non-Docker or external listener)."
+    if ss -tln 2>/dev/null | awk '{print $5}' | grep -q ":${DNS_PROXY_HOST_PORT}$"; then
+      echo -e "${yellow}Warning:${reset} TCP ${DNS_PROXY_HOST_PORT} still in use after shutdown (non-Docker or external listener)."
     fi
   elif command -v netstat >/dev/null 2>&1; then
-    if netstat -anu 2>/dev/null | awk '{print $4}' | grep -q ':53$'; then
-      echo -e "${yellow}Warning:${reset} UDP 53 still in use after shutdown (non-Docker or external listener)."
+    if netstat -anu 2>/dev/null | awk '{print $4}' | grep -q ":${DNS_PROXY_HOST_PORT}$"; then
+      echo -e "${yellow}Warning:${reset} UDP ${DNS_PROXY_HOST_PORT} still in use after shutdown (non-Docker or external listener)."
     fi
-    if netstat -ant 2>/dev/null | awk '{print $4}' | grep -q ':53$'; then
-      echo -e "${yellow}Warning:${reset} TCP 53 still in use after shutdown (non-Docker or external listener)."
+    if netstat -ant 2>/dev/null | awk '{print $4}' | grep -q ":${DNS_PROXY_HOST_PORT}$"; then
+      echo -e "${yellow}Warning:${reset} TCP ${DNS_PROXY_HOST_PORT} still in use after shutdown (non-Docker or external listener)."
     fi
   fi
 }
@@ -278,10 +281,10 @@ start_stack() {
    # Also ensure no leftover dns-reverse-proxy container is still binding UDP/53
    cleanup_dns_reverse_proxy || true
 
-   # Hard-fail if port 53 is already taken by something we don't control
+   # Hard-fail if the DNS listener port is already taken by something we don't control
    if is_port53_busy; then
-     echo -e "${red}Cannot start stack:${reset} port 53 (TCP/UDP) is already in use on the host."
-     echo -e "${yellow}Hint:${reset} check for local DNS services or previous runs holding :53."
+     echo -e "${red}Cannot start stack:${reset} port ${DNS_PROXY_HOST_PORT} (TCP/UDP) is already in use on the host."
+     echo -e "${yellow}Hint:${reset} check for local DNS services or previous runs holding :${DNS_PROXY_HOST_PORT}."
      return 1
    fi
 
