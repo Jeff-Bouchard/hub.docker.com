@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Install dependencies for entropy generation
 RUN apt-get update && apt-get install -y \
+    apt-utils \
     git \
     rng-tools \
     openssl \

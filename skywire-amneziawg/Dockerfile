@@ -37,6 +37,7 @@ FROM debian:bullseye-slim
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    apt-utils \
     iproute2 \
     iptables \
     git \

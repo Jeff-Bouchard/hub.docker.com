@@ -5,6 +5,7 @@ ARG TARGETPLATFORM
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
+    apt-utils \
     i2pd \
     curl \
     iproute2 \

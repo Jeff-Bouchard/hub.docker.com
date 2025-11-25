@@ -10,6 +10,7 @@ WORKDIR /build
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     git \
+    apt-utils \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,6 +28,7 @@ FROM debian:bullseye-slim
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    apt-utils \
     tini \
     && rm -rf /var/lib/apt/lists/*
 

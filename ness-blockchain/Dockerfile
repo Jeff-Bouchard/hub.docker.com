@@ -10,6 +10,7 @@ WORKDIR /build
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     git \
+    apt-utils \
     build-essential \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -28,6 +29,7 @@ FROM debian:bullseye-slim
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    apt-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binaries from builder

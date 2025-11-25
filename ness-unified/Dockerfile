@@ -14,6 +14,7 @@ ARG TARGETPLATFORM
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
+    apt-utils \
     git \
     build-essential \
     golang-go \

@@ -6,6 +6,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     git \
+    apt-utils \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/NESS-Network/privatenumer.git . \
