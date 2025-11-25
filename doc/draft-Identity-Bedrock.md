@@ -233,7 +233,7 @@ By Rompel, existence of such Σ is equivalent to existence of OWF. There is no s
 
 7. Relation to Skycoin-type chains (optional anchoring)
 Skycoin-type chains (Skycoin, Privateness descendants, similar UTXO chains) use:
-
+https://github.com/skycoin/skycoin/wiki/Deterministic-Keypair-Generation-Method
 secp256k1 ECDSA keypairs hashed as ripemd160(sha256(sha256(pubkey))) to form Base58 addresses, per the Skycoin address spec,<sup>[1](https://github.com/skycoin/skycoin/wiki/Technical-background-of-version-0-Skycoin-addresses)</sup> and
 a UTXO model without a general script VM.
 When interoperability with those chains is desired, operators may publish an additional linkage so that verifiers can correlate bedrock identities with existing wallet infrastructure. In that case we keep two cryptographic anchors for one entity:
