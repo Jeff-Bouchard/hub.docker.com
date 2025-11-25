@@ -142,8 +142,8 @@ services:
     image: nessnetwork/dns-reverse-proxy
     container_name: dns-reverse-proxy
     ports:
-      - "53:53/udp"
-      - "53:53/tcp"
+      - "1053:53/udp"
+      - "1053:53/tcp"
       - "8053:8053"
     environment:
       - EMERCOIN_HOST=emercoin-core
