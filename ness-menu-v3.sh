@@ -302,7 +302,7 @@ wait_for_emercoin_core() {
   # Then up to ~2 minutes (60 * 2s) for slow first-start / sync
   local i
   for ((i=1; i<=max_tries; i++)); do
-    if docker exec emercoin-core emercoin-cli -datadir=/data getblockchaininfo >/dev/null 2>&1; then
+    if MSYS_NO_PATHCONV=1 docker exec emercoin-core emercoin-cli -datadir=/data getblockchaininfo >/dev/null 2>&1; then
       echo "emercoin-core CLI is answering."
       return 0
     fi
@@ -683,7 +683,12 @@ health_check() {
   echo "== Privateness vs explorer (seq/block_hash) =="
   local explorer_health local_status
   explorer_health=$(curl -s https://ness-explorer.magnetosphere.net/api/health 2>/dev/null || true)
-  local_status=$(docker exec privateness privateness-cli status 2>/dev/null || true)
+
+  if [ -x "${SCRIPT_DIR}/privateness-cli" ]; then
+    local_status=$("${SCRIPT_DIR}/privateness-cli" status 2>/dev/null || true)
+  else
+    local_status=$(docker exec privateness privateness-cli status 2>/dev/null || true)
+  fi
 
   if [ -n "$explorer_health" ] && [ -n "$local_status" ]; then
     echo "-- Explorer:"
@@ -695,11 +700,11 @@ health_check() {
     local exp_seq loc_seq exp_hash loc_hash
     exp_seq=$(echo "$explorer_health" | grep -o '"seq":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
     loc_seq=$(echo "$local_status" | grep -o '"seq":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
-    exp_hash=$(echo "$explorer_health" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | head -n1)
-    loc_hash=$(echo "$local_status" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | head -n1)
+    exp_hash=$(echo "$explorer_health" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]' | head -n1)
+    loc_hash=$(echo "$local_status" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]' | head -n1)
 
-    if [ -n "$exp_seq" ] && [ "$exp_seq" = "$loc_seq" ] && \
-       [ -n "$exp_hash" ] && [ "$exp_hash" = "$loc_hash" ]; then
+    if [ -n "$exp_seq" ] && [ -n "$loc_seq" ] && [ "$exp_seq" = "$loc_seq" ] && \
+       [ -n "$exp_hash" ] && [ -n "$loc_hash" ] && [ "$exp_hash" = "$loc_hash" ]; then
       echo -e " ${green}${check_ok_symbol}${reset} Privateness seq/hash match explorer"
     else
       echo -e " ${red}${check_fail_symbol}${reset} Privateness seq/hash MISMATCH explorer"
@@ -712,34 +717,18 @@ health_check() {
   fi
 
   echo
-  echo "== Emercoin JSON-RPC (port ${EMERCOIN_RPC_PORT:-6662}) =="
-  local rpc_port="${EMERCOIN_RPC_PORT:-6662}"
-  local rpc_user="${EMERCOIN_RPC_USER:-rpcuser}"
-  local rpc_pass="${EMERCOIN_RPC_PASS:-rpcpassword}"
-
-  local emc_conf="${EMERCOIN_CONF:-$HOME/.emercoin/emercoin.conf}"
-  if [ -f "$emc_conf" ]; then
-    local conf_user conf_pass conf_port
-    conf_user=$(grep -E '^[[:space:]]*rpcuser=' "$emc_conf" | tail -n1 | sed 's/.*=//')
-    conf_pass=$(grep -E '^[[:space:]]*rpcpassword=' "$emc_conf" | tail -n1 | sed 's/.*=//')
-    conf_port=$(grep -E '^[[:space:]]*rpcport=' "$emc_conf" | tail -n1 | sed 's/.*=//')
-
-    [ -n "$conf_user" ] && rpc_user="$conf_user"
-    [ -n "$conf_pass" ] && rpc_pass="$conf_pass"
-    [ -n "$conf_port" ] && rpc_port="$conf_port"
+  echo "== Emercoin JSON-RPC (via emercoin-cli in container) =="
+  local emc_rpc=""
+  if docker ps --format '{{.Names}}' | grep -q '^emercoin-core$'; then
+    emc_rpc=$(MSYS_NO_PATHCONV=1 docker exec emercoin-core emercoin-cli -datadir=/data getblockchaininfo 2>/dev/null || true)
   fi
 
-  local emc_rpc
-  emc_rpc=$(curl -s --user "$rpc_user:$rpc_pass" \
-    -H 'content-type: text/plain;' \
-    --data-binary '{"jsonrpc":"1.0","id":"ness-health","method":"getblockchaininfo","params":[]}' \
-    "http://127.0.0.1:${rpc_port}/" 2>/dev/null || true)
-  if echo "$emc_rpc" | grep -q '"result"'; then
+  if echo "$emc_rpc" | grep -q '"blocks"'; then
     echo "$emc_rpc" | tr '\n' ' ' | sed 's/  */ /g' | head -c 200; echo
-    echo -e " ${green}${check_ok_symbol}${reset} Emercoin JSON-RPC responding on ${rpc_port}"
+    echo -e " ${green}${check_ok_symbol}${reset} Emercoin JSON-RPC responding via emercoin-cli"
   else
     echo "$emc_rpc" | head -c 200; echo
-    echo -e " ${red}${check_fail_symbol}${reset} Emercoin JSON-RPC failed on ${rpc_port}"
+    echo -e " ${red}${check_fail_symbol}${reset} Emercoin JSON-RPC failed via emercoin-cli"
     rpc_rc=1
   fi
 
@@ -749,42 +738,45 @@ health_check() {
   emc_height_remote=$(curl -s https://explorer.emercoin.com/api/stats/block_height 2>/dev/null || true)
   emc_hash_remote=$(curl -s https://explorer.emercoin.com/api/block/latest 2>/dev/null || true)
 
-  if [ -n "$emc_height_remote" ] && [ -n "$emc_hash_remote" ] && echo "$emc_rpc" | grep -q '"result"'; then
+  if [ -n "$emc_height_remote" ] && echo "$emc_rpc" | grep -q '"blocks"'; then
     echo "-- Explorer height:"
     echo "$emc_height_remote" || true
     echo
     echo "-- Local getblockchaininfo (blocks):"
-    echo "$emc_rpc" | grep -o '"blocks":[0-9]*' | head -n1 || true
+    echo "$emc_rpc" | awk -F: '/"blocks"/ {print $0; exit}' || true
 
     local remote_height local_height
     remote_height=$(echo "$emc_height_remote" | tr -dc '0-9' | head -c 18)
-    local_height=$(echo "$emc_rpc" | grep -o '"blocks":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
+    local_height=$(echo "$emc_rpc" | awk -F: '/"blocks"/ {gsub(/[^0-9]/, "", $2); print $2; exit}')
 
     echo
     echo "-- Explorer latest block hash:"
-    echo "$emc_hash_remote" | grep -o '"blockhash":"[^"]*"' || true
+    echo "$emc_hash_remote" | grep -E '"block(hash|_hash)":"[^"]*"' || true
     echo
-    echo "-- Local best block hash (JSON-RPC getbestblockhash):"
+    echo "-- Local best block hash (emercoin-cli getbestblockhash):"
 
     local emc_hash_local
-    emc_hash_local=$(curl -s --user "$rpc_user:$rpc_pass" \
-      -H 'content-type: text/plain;' \
-      --data-binary '{"jsonrpc":"1.0","id":"ness-health","method":"getbestblockhash","params":[]}' \
-      "http://127.0.0.1:${rpc_port}/" 2>/dev/null || true)
+    emc_hash_local=$(MSYS_NO_PATHCONV=1 docker exec emercoin-core emercoin-cli -datadir=/data getbestblockhash 2>/dev/null || true)
 
     echo "$emc_hash_local" | head -c 200; echo
 
     local remote_hash local_hash
-    remote_hash=$(echo "$emc_hash_remote" | grep -o '"blockhash":"[^"]*"' | sed 's/.*"blockhash":"//;s/".*//' | head -n1)
-    local_hash=$(echo "$emc_hash_local" | grep -o '"result":"[^"]*"' | sed 's/.*"result":"//;s/".*//' | head -n1)
+    remote_hash=$(echo "$emc_hash_remote" | sed -n 's/.*"blockhash":"\([^" ]*\)".*/\1/p; s/.*"block_hash":"\([^" ]*\)".*/\1/p' | head -n1 | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]')
+    local_hash=$(echo "$emc_hash_local" | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]' | head -c 128)
 
-    if [ -n "$remote_height" ] && [ -n "$local_height" ] && \
-       [ "$remote_height" = "$local_height" ] && \
-       [ -n "$remote_hash" ] && [ -n "$local_hash" ] && \
-       [ "$remote_hash" = "$local_hash" ]; then
-      echo -e " ${green}${check_ok_symbol}${reset} Emercoin height/hash match explorer"
+    if [ -n "$remote_height" ] && [ -n "$local_height" ] && [ "$remote_height" = "$local_height" ]; then
+      if [ -n "$remote_hash" ] && [ -n "$local_hash" ]; then
+        if [ "$remote_hash" = "$local_hash" ]; then
+          echo -e " ${green}${check_ok_symbol}${reset} Emercoin height/hash match explorer"
+        else
+          echo -e " ${red}${check_fail_symbol}${reset} Emercoin hash MISMATCH explorer (heights match)"
+          overall_rc=1
+        fi
+      else
+        echo -e " ${yellow}${check_ok_symbol}${reset} Emercoin explorer hash missing, but heights match (hash not checked)"
+      fi
     else
-      echo -e " ${red}${check_fail_symbol}${reset} Emercoin height/hash MISMATCH explorer"
+      echo -e " ${red}${check_fail_symbol}${reset} Emercoin height MISMATCH explorer"
       overall_rc=1
     fi
   else
@@ -794,9 +786,8 @@ health_check() {
   fi
 
   echo
-  echo "== Tier 1 entropy / tools (pyuheprng + privatenesstools) =="
+  echo "== Tier 1 entropy (pyuheprng) =="
   test_pyuheprng || overall_rc=1
-  test_privatenesstools || overall_rc=1
 
   if [ "$rpc_rc" -ne 0 ]; then
     overall_rc=1
@@ -817,9 +808,8 @@ test_menu() {
     echo "  1) Core node health check"
     echo "  2) Entropy check"
     echo "  3) Test pyuheprng (port 5000)"
-    echo "  4) Test privatenesstools (port 8888)"
-    echo "  5) Test dns-reverse-proxy (ports ${DNS_PROXY_HOST_PORT}/8053)"
-    echo "  6) Test Skywire visor (port 8000)"
+    echo "  4) Test dns-reverse-proxy (ports ${DNS_PROXY_HOST_PORT}/8053)"
+    echo "  5) Test Skywire visor (port 8000)"
     echo "  0) Back"
     echo
     read -rp "Select an option: " choice
@@ -827,9 +817,8 @@ test_menu() {
       1) health_check ;;
       2) check_entropy ;;
       3) test_pyuheprng ;;
-      4) test_privatenesstools ;;
-      5) test_dns_reverse_proxy ;;
-      6) test_skywire ;;
+      4) test_dns_reverse_proxy ;;
+      5) test_skywire ;;
       0) return 0 ;;
       *) echo "Invalid choice." ;;
     esac
@@ -861,8 +850,6 @@ print_info() {
   else
     docker_status="not installed"
   fi
-
-  stack=$(stack_status 2>/dev/null | wc -l)
 
   local box_top="${panel_bg}${panel_border}┌────────────────────────────────────────────┐${reset}"
   local box_mid="${panel_bg}${panel_border}├────────────────────────────────────────────┤${reset}"

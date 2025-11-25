@@ -89,7 +89,7 @@ echo "
 
 ############################################################################################
 # Starting Skywire VPN with server called by EmerDNS name                                  #
-# Open http://IP:8000 on another computer to validate in visor console                     #
+# Open http://EmerDNS-Name:8000 on another computer to validate in visor console                     #
 # Output expected is simply "Starting"                                                           #
 ############################################################################################
 "

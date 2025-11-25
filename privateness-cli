@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Simple wrapper to run privateness-cli inside the Docker container
+# Usage examples:
+#   ./privateness-cli status
+#   ./privateness-cli help
+# All arguments are passed through to the in-container privateness-cli.
+
+# On Windows Git Bash, MSYS_NO_PATHCONV avoids accidental path mangling
+MSYS_NO_PATHCONV=1 docker exec -it privateness privateness-cli "$@"

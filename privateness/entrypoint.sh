@@ -19,7 +19,7 @@ echo "Starting Privateness blockchain node..."
 # Default GUI directory inside the container, can be overridden via PRIVATENESS_GUI_DIR
 GUI_DIR=${PRIVATENESS_GUI_DIR:-/opt/privateness/gui/static}
 
-USER_MAX_DECIMALS=${USER_MAX_DECIMALS:-6}
+USER_MAX_DECIMALS=${USER_MAX_DECIMALS:6}
 export USER_MAX_DECIMALS
 
 exec privateness \
@@ -29,5 +29,5 @@ exec privateness \
     -enable-all-api-sets=true \
     -enable-gui=true \
     -log-level=error \
-    -disable-pex=true \
+    -disable-pex \
     "$@"

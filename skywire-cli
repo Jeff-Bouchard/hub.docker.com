@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Wrapper to run skywire-cli inside the Docker container
+# Usage examples:
+#   ./skywire-cli visor status
+#   ./skywire-cli vpn start <server_pk>
+
+MSYS_NO_PATHCONV=1 docker exec -it skywire skywire-cli "$@"
