@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters\DnsPolicyConfig\{4bb812c0-e47a-48a8-aafc-f9c821cb1179}]
+"ConfigOptions"=dword:00000008
+"Name"=hex(7):2e,00,6e,00,65,00,73,00,73,00,00,00,2e,00,73,00,6b,00,79,00,00,00,2e,00,6d,00,64,00,6c,00,00,00,2e,00,63,00,6f,00,69,00,6e,00,00,00,2e,00,6c,00,69,00,62,00,00,00,2e,00,65,00,6d,00,63,00,00,00,2e,00,62,00,61,00,7a,00,61,00,72,00,00,00,2e,00,69,00,32,00,70,00,00,00,2e,00,79,00,67,00,67,00,00,00,2e,00,78,00,6d,00,72,00,00,00
+"IPSECCARestriction"=""
+"GenericDNSServers"="ns74.com"
+"Version"=dword:00000002

@@ -612,12 +612,18 @@ check_tcp_port() {
 test_pyuheprng() {
   echo
   echo -e "${yellow}Testing pyuheprng HTTP health (port 5000)...${reset}"
-  if curl -s --max-time 5 "http://127.0.0.1:5000/health" >/dev/null 2>&1; then
-    echo -e " ${green}${check_ok_symbol}${reset} /health responding on 5000"
-  else
-    echo -e " ${yellow}No /health endpoint detectable, falling back to TCP probe...${reset}"
-    check_tcp_port 127.0.0.1 5000 "pyuheprng"
+  # Prefer an in-container check to avoid host TCP quirks on Windows
+  if docker ps --format '{{.Names}}' | grep -q '^pyuheprng-privatenesstools$'; then
+    if MSYS_NO_PATHCONV=1 docker exec pyuheprng-privatenesstools bash -lc \
+        'curl -s --max-time 5 "http://127.0.0.1:5000/health" >/dev/null 2>&1'; then
+      echo -e " ${green}${check_ok_symbol}${reset} /health responding on 5000 (in-container)"
+      return 0
+    fi
   fi
+
+  # Fallback: try from the host side (mapped port 5000)
+  echo -e " ${yellow}No in-container /health detected, falling back to host TCP probe...${reset}"
+  check_tcp_port 127.0.0.1 5000 "pyuheprng"
 }
 
 test_privatenesstools() {
@@ -756,7 +762,7 @@ health_check() {
 
     echo
     echo "-- Explorer latest block hash:"
-    echo "$emc_hash_remote" | grep -E '"block(hash|_hash)":"[^"]*"' || true
+    echo "$emc_hash_remote" | grep -E '"block(hash|_hash)"[[:space:]]*:[[:space:]]*"[^"]*"' || true
     echo
     echo "-- Local best block hash (emercoin-cli getbestblockhash):"
 
@@ -766,7 +772,7 @@ health_check() {
     echo "$emc_hash_local" | head -c 200; echo
 
     local remote_hash local_hash
-    remote_hash=$(echo "$emc_hash_remote" | sed -n 's/.*"blockhash":"\([^" ]*\)".*/\1/p; s/.*"block_hash":"\([^" ]*\)".*/\1/p' | head -n1 | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]')
+    remote_hash=$(echo "$emc_hash_remote" | sed -n 's/.*"blockhash"[[:space:]]*:[[:space:]]*"\([^" ]*\)".*/\1/p; s/.*"block_hash"[[:space:]]*:[[:space:]]*"\([^" ]*\)".*/\1/p' | head -n1 | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]')
     local_hash=$(echo "$emc_hash_local" | tr -d ' \r\n\t' | tr '[:upper:]' '[:lower:]' | head -c 128)
 
     if [ -n "$remote_height" ] && [ -n "$local_height" ] && [ "$remote_height" = "$local_height" ]; then
@@ -787,6 +793,20 @@ health_check() {
   else
     echo "Could not obtain explorer or local Emercoin info."
     echo -e " ${red}${check_fail_symbol}${reset} Emercoin vs explorer check failed"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== DNS reverse proxy (tier 1) =="
+  local dns_rc=0
+  if docker ps --format '{{.Names}}' | grep -q '^dns-reverse-proxy$'; then
+    check_tcp_port 127.0.0.1 "${DNS_PROXY_HOST_PORT}" "dns-reverse-proxy (DNS)" || dns_rc=1
+    check_tcp_port 127.0.0.1 8053 "dns-reverse-proxy (control/API)" || dns_rc=1
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} dns-reverse-proxy container not running"
+    dns_rc=1
+  fi
+  if [ "$dns_rc" -ne 0 ]; then
     overall_rc=1
   fi
 

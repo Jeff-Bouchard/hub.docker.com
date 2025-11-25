@@ -17,17 +17,29 @@ if [ ! -w /dev/random ]; then
     exit 1
 fi
 
-# Check Emercoin connection
-echo "Checking Emercoin Core connection..."
-until curl -s --user "$EMERCOIN_USER:$EMERCOIN_PASS" \
-    --data-binary '{"jsonrpc":"1.0","id":"test","method":"getinfo","params":[]}' \
-    -H 'content-type: text/plain;' \
-    http://$EMERCOIN_HOST:$EMERCOIN_PORT/ > /dev/null 2>&1; do
-    echo "Waiting for Emercoin Core at $EMERCOIN_HOST:$EMERCOIN_PORT..."
+# Check Emercoin connection (best-effort; do not block startup forever)
+echo "Checking Emercoin Core connection (best-effort)..."
+MAX_ATTEMPTS=${EMC_WAIT_MAX_ATTEMPTS:-6}
+attempt=1
+emer_ok=0
+while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
+    if curl -s --user "$EMERCOIN_USER:$EMERCOIN_PASS" \
+        --data-binary '{"jsonrpc":"1.0","id":"test","method":"getinfo","params":[]}' \
+        -H 'content-type: text/plain;' \
+        http://$EMERCOIN_HOST:$EMERCOIN_PORT/ > /dev/null 2>&1; then
+        echo "✓ Emercoin Core connected"
+        emer_ok=1
+        break
+    fi
+    echo "Waiting for Emercoin Core at $EMERCOIN_HOST:$EMERCOIN_PORT... (attempt $attempt/$MAX_ATTEMPTS)"
+    attempt=$((attempt+1))
     sleep 5
 done
 
-echo "✓ Emercoin Core connected"
+if [ "$emer_ok" -ne 1 ]; then
+    echo "⚠ Could not confirm Emercoin Core at $EMERCOIN_HOST:$EMERCOIN_PORT after $MAX_ATTEMPTS attempts."
+    echo "⚠ Continuing without confirmed RC4OK; pyuheprng will fall back to other entropy sources if available."
+fi
 
 # Check hardware RNG availability
 if [ -c /dev/hwrng ]; then

@@ -38,7 +38,21 @@ fetch_nvs_config() {
 
   # Unescape common JSON sequences
   VALUE=$(printf '%s' "$VALUE" | sed 's/\\n/\n/g; s/\\"/"/g')
-  echo "$VALUE"
+
+  # The stored value follows the legacy pattern from emercoin-value.py, e.g.:
+  #   DAEMON_ARGS="\n    -default 9.9.9.9:53 \\n    -route .ness=127.0.0.1:5335 \\n+  #   ..."
+  # We need to strip the DAEMON_ARGS=" wrapper and closing quote, drop
+  # line-continuation backslashes, and flatten to a single argv string.
+
+  CLEAN=$(printf '%s\n' "$VALUE" \
+    | sed '1s/^DAEMON_ARGS=\"//; $s/\"$//' \
+    | sed 's/\\$//' )
+
+  ARGS=$(printf '%s\n' "$CLEAN" \
+    | tr '\n' ' ' \
+    | sed 's/[[:space:]][[:space:]]*/ /g; s/^ *//; s/ *$//')
+
+  echo "$ARGS"
 }
 
 wait_for_rpc
