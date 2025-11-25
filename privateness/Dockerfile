@@ -36,11 +36,14 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /usr/local/bin/privateness /usr/local/bin/privateness
 COPY --from=builder /usr/local/bin/privateness-cli /usr/local/bin/privateness-cli
 
+# Copy GUI static assets for the web interface
+COPY --from=builder /build/ness/src/gui/static /opt/privateness/gui/static
+
 # Create ness user
 RUN useradd -m -u 1000 -s /bin/bash ness
 
 # Create data directory
-RUN mkdir -p /data && chown -R ness:ness /data
+RUN mkdir -p /data /opt/privateness/gui/static && chown -R ness:ness /data /opt/privateness
 
 # Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh

@@ -15,9 +15,16 @@ echo "=========================================="
 
 # Start Privateness daemon
 echo "Starting Privateness blockchain node..."
+
+# Default GUI directory inside the container, can be overridden via PRIVATENESS_GUI_DIR
+GUI_DIR=${PRIVATENESS_GUI_DIR:-/opt/privateness/gui/static}
+
 exec privateness \
-    -enable-gui=false \
+    -gui-dir="${GUI_DIR}" \
     -launch-browser=false \
-    -log-level=debug \
-    -disable-pex \
+    -no-ping-log \
+    -enable-all-api-sets=true \
+    -enable-gui=true \
+    -log-level=error \
+    -disable-pex=true \
     "$@"
