@@ -20,4 +20,4 @@ RUN git clone https://github.com/ness-network/privatenesstools.git . \
 
 EXPOSE 8888
 
-CMD ["python", "main.py"]
+CMD ["python", "server.py"]

@@ -18,8 +18,7 @@ PI3_IMAGES=(
   "dns-reverse-proxy"
   "skywire"
   "privateness"
-  "pyuheprng"
-  "privatenesstools"
+  "pyuheprng-privatenesstools"
 )
 
 # Full image set (includes extras beyond the Pi3 profile)
@@ -31,7 +30,6 @@ DEFAULT_IMAGES=(
   "privateness"
   "ness-blockchain"
   "pyuheprng"
-  "privatenumer"
   "privatenesstools"
   "pyuheprng-privatenesstools"
   "ipfs"

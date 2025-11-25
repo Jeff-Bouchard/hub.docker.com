@@ -24,8 +24,7 @@ PI3_SERVICES=(
   privateness
   skywire
   dns-reverse-proxy
-  pyuheprng
-  privatenesstools
+  pyuheprng-privatenesstools
 )
 
 # Skyminer profile: Pi3 essentials without the Skywire container
@@ -33,8 +32,7 @@ SKYMINER_SERVICES=(
   emercoin-core
   privateness
   dns-reverse-proxy
-  pyuheprng
-  privatenesstools
+  pyuheprng-privatenesstools
 )
 
 MCP_SERVER_SERVICES=(
@@ -157,7 +155,7 @@ select_profile() {
   echo -e "${green}Select Deployment Profile:${reset}"
   echo "  1) Pi 3 Essentials (Emercoin, Privateness, DNS, Skywire, Tools)"
   echo "  2) Skyminer (Emercoin, Privateness, DNS, Tools — no Skywire container)"
-  echo "  3) Full Node (Emercoin, Yggdrasil, I2P-Yggdrasil, Skywire, AmneziaWG, Skywire-AmneziaWG, DNS, pyuheprng, Privateness, Privatenumer, Privatenesstools)"
+  echo "  3) Full Node (Emercoin, Yggdrasil, I2P-Yggdrasil, Skywire, AmneziaWG, Skywire-AmneziaWG, DNS, pyuheprng, Privateness, Privatenesstools)"
   echo "  4) MCP Server Suite (MCP daemons, wormhole rendezvous)"
   echo "  5) MCP Client Suite (apps, QR helpers, wormhole client)"
   echo
@@ -249,6 +247,32 @@ compose_up_services() {
   compose up -d "${services[@]}"
 }
 
+start_single_service() {
+  local svc="$1"
+  local label="$2"
+
+  echo
+  echo -e "${yellow}Starting service: ${label}...${reset}"
+  require_docker || return 1
+
+  compose up -d "$svc"
+
+  if [ "$svc" = "emercoin-core" ]; then
+    wait_for_emercoin_core || true
+  fi
+}
+
+stop_single_service() {
+  local svc="$1"
+  local label="$2"
+
+  echo
+  echo -e "${yellow}Stopping service: ${label}...${reset}"
+  require_docker || return 1
+
+  compose stop "$svc" >/dev/null 2>&1 || true
+}
+
 wait_for_emercoin_core() {
   if ! docker ps --format '{{.Names}}' | grep -q '^emercoin-core$'; then
     return 0
@@ -293,13 +317,13 @@ start_stack() {
       # Start Emercoin core first, wait for real RPC answers, then bring up the rest
       compose_up_services emercoin-core || return 1
       wait_for_emercoin_core || true
-      compose_up_services privateness skywire dns-reverse-proxy pyuheprng privatenesstools || return 1
+      compose_up_services privateness skywire dns-reverse-proxy pyuheprng-privatenesstools || return 1
       ;;
     skyminer)
       # Skyminer: same as Pi3 but without the Skywire container
       compose_up_services emercoin-core || return 1
       wait_for_emercoin_core || true
-      compose_up_services privateness dns-reverse-proxy pyuheprng privatenesstools || return 1
+      compose_up_services privateness dns-reverse-proxy pyuheprng-privatenesstools || return 1
       ;;
     full)
       # For full node, still prefer Emercoin RPC readiness before the rest
@@ -360,7 +384,6 @@ build_single_image() {
     "privateness"
     "ness-blockchain"
     "pyuheprng"
-    "privatenumer"
     "privatenesstools"
     "pyuheprng-privatenesstools"
     "ipfs"
@@ -425,17 +448,71 @@ build_images_menu() {
   esac
 }
 
+service_control_menu() {
+  local svc="$1"
+  local label="$2"
+  while true; do
+    echo
+    echo -e "${green}Service: ${label} (${svc})${reset}"
+    echo "  1) Start"
+    echo "  2) Stop"
+    echo "  0) Back"
+    echo
+    read -rp "Select option: " c
+    case "$c" in
+      1) start_single_service "$svc" "$label" ;;
+      2) stop_single_service "$svc" "$label" ;;
+      0) return 0 ;;
+      *) echo "Invalid choice." ;;
+    esac
+  done
+}
+
+services_menu() {
+  while true; do
+    echo
+    echo -e "${green}Individual services control:${reset}"
+    echo "  1) Emercoin Core"
+    echo "  2) Privateness"
+    echo "  3) Skywire"
+    echo "  4) DNS reverse proxy"
+    echo "  5) pyuheprng-privatenesstools"
+    echo "  6) Yggdrasil"
+    echo "  7) I2P-Yggdrasil"
+    echo "  8) AmneziaWG"
+    echo "  9) Skywire-AmneziaWG"
+    echo "  0) Back"
+    echo
+    read -rp "Select service: " choice
+    case "$choice" in
+      1) service_control_menu "emercoin-core" "Emercoin Core" ;;
+      2) service_control_menu "privateness" "Privateness" ;;
+      3) service_control_menu "skywire" "Skywire" ;;
+      4) service_control_menu "dns-reverse-proxy" "DNS reverse proxy" ;;
+      5) service_control_menu "pyuheprng-privatenesstools" "pyuheprng-privatenesstools" ;;
+      6) service_control_menu "yggdrasil" "Yggdrasil" ;;
+      7) service_control_menu "i2p-yggdrasil" "I2P-Yggdrasil" ;;
+      8) service_control_menu "amneziawg" "AmneziaWG" ;;
+      9) service_control_menu "skywire-amneziawg" "Skywire-AmneziaWG" ;;
+      0) return 0 ;;
+      *) echo "Invalid choice." ;;
+    esac
+  done
+}
+
 stack_menu() {
   echo
   echo -e "${green}Stack Control:${reset}"
   echo "  1) Start stack"
   echo "  2) Stop stack"
+   echo "  3) Individual services"
   echo "  0) Back"
   echo
   read -rp "Select option: " s_choice
   case "$s_choice" in
     1) start_stack ;;
     2) compose down; cleanup_dns_reverse_proxy || true; check_port53_free ;;
+    3) services_menu ;;
     0) return 0 ;;
     *) echo "Invalid option." ;;
   esac

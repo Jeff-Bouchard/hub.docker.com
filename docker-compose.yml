@@ -114,34 +114,18 @@ services:
       - emercoin-core
       - dns-reverse-proxy
 
-  pyuheprng:
-    image: nessnetwork/pyuheprng
-    container_name: pyuheprng
+  pyuheprng-privatenesstools:
+    image: nessnetwork/pyuheprng-privatenesstools
+    container_name: pyuheprng-privatenesstools
     ports:
       - "5000:5000"
+      - "8888:8888"
     restart: unless-stopped
     depends_on:
       emercoin-core:
         condition: service_healthy
-
-  privatenumer:
-    image: nessnetwork/privatenumer
-    container_name: privatenumer
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-    depends_on:
-      - pyuheprng
-
-  privatenesstools:
-    image: nessnetwork/privatenesstools
-    container_name: privatenesstools
-    ports:
-      - "8888:8888"
-    restart: unless-stopped
-    depends_on:
-      - privateness
-      - emercoin-core
+      privateness:
+        condition: service_started
 
   dns-reverse-proxy:
     image: nessnetwork/dns-reverse-proxy
