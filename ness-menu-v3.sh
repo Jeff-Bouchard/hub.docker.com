@@ -370,18 +370,22 @@ stack_status() {
   echo
   echo -e "${green}Key service statuses:${reset}"
   local svc label status color
+  local pairs=(
+    "emercoin-core:Emercoin Core"
+    "privateness:Privateness"
+    "pyuheprng-privatenesstools:pyuheprng-privatenesstools"
+    "dns-reverse-proxy:DNS reverse proxy"
+    "skywire:Skywire"
+    "yggdrasil:Yggdrasil"
+    "i2p-yggdrasil:I2P-Yggdrasil"
+    "amneziawg:AmneziaWG"
+    "skywire-amneziawg:Skywire-AmneziaWG"
+  )
 
-  for svc label in \
-    emercoin-core "Emercoin Core" \
-    privateness   "Privateness" \
-    pyuheprng-privatenesstools "pyuheprng-privatenesstools" \
-    dns-reverse-proxy "DNS reverse proxy" \
-    skywire       "Skywire" \
-    yggdrasil     "Yggdrasil" \
-    i2p-yggdrasil "I2P-Yggdrasil" \
-    amneziawg     "AmneziaWG" \
-    skywire-amneziawg "Skywire-AmneziaWG"
-  do
+  local pair
+  for pair in "${pairs[@]}"; do
+    svc=${pair%%:*}
+    label=${pair#*:}
     status=$(service_status "$svc")
     case "$status" in
       RUNNING) color="$green" ;;
