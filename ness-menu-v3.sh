@@ -64,8 +64,8 @@ panel_bg="\033[48;5;233m"
 title_glow="\033[38;5;213m"
 reset="\033[0m"
 
-check_ok_symbol="✔✔✔"
-check_fail_symbol="✘✘✘"
+check_ok_symbol="[  OK  ]"
+check_fail_symbol="[ FAIL ]"
 
 load_dns_labels() {
   if [ -f "$DNS_LABEL_FILE" ]; then

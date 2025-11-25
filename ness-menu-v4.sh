@@ -64,8 +64,8 @@ panel_bg="\033[48;5;233m"
 title_glow="\033[38;5;213m"
 reset="\033[0m"
 
-check_ok_symbol="✔✔✔"
-check_fail_symbol="✘✘✘"
+check_ok_symbol="[  OK  ]"
+check_fail_symbol="[ FAIL ]"
 
 load_dns_labels() {
   if [ -f "$DNS_LABEL_FILE" ]; then
@@ -903,6 +903,31 @@ health_check() {
   else
     echo -e "${red}===== GLOBAL STATUS: FAILED (RPC + explorer) =====${reset}"
   fi
+
+  return "$overall_rc"
+}
+
+test_full_node_e2e() {
+  echo
+  echo -e "${yellow}Full node end-to-end test (tier 1 + overlays/VPN)...${reset}"
+  require_docker || return 1
+
+  local rc_health rc_overlays
+
+  health_check
+  rc_health=$?
+
+  test_full_node_overlays
+  rc_overlays=$?
+
+  echo
+  if [ "$rc_health" -eq 0 ] && [ "$rc_overlays" -eq 0 ]; then
+    echo -e "${green}[  OK  ] FULL NODE E2E: RPC, explorer, DNS, entropy, overlays/VPN${reset}"
+    return 0
+  else
+    echo -e "${red}[ FAIL ] FULL NODE E2E: see above sections for details${reset}"
+    return 1
+  fi
 }
 
 test_menu() {
@@ -915,6 +940,7 @@ test_menu() {
     echo "  4) Test dns-reverse-proxy (ports ${DNS_PROXY_HOST_PORT}/8053)"
     echo "  5) Test Skywire visor (port 8000)"
     echo "  6) Full node overlay/VPN services"
+    echo "  7) Full node E2E (tier 1 + overlays/VPN)"
     echo "  0) Back"
     echo
     read -rp "Select an option: " choice
@@ -925,6 +951,7 @@ test_menu() {
       4) test_dns_reverse_proxy ;;
       5) test_skywire ;;
       6) test_full_node_overlays ;;
+      7) test_full_node_e2e ;;
       0) return 0 ;;
       *) echo "Invalid choice." ;;
     esac
