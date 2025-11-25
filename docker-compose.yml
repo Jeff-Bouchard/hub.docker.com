@@ -31,23 +31,6 @@ services:
       emercoin-core:
         condition: service_healthy
 
-  dns-reverse-proxy:
-    image: nessnetwork/dns-reverse-proxy
-    container_name: dns-reverse-proxy
-    ports:
-      - "53:53/udp"
-      - "53:53/tcp"
-      - "8053:8053"
-    environment:
-      - EMERCOIN_HOST=emercoin-core
-      - EMERCOIN_PORT=6662
-      - EMERCOIN_USER=${EMERCOIN_RPC_USER:-rpcuser}
-      - EMERCOIN_PASS=${EMERCOIN_RPC_PASS:-rpcpassword}
-      - DNS_NVS_KEY=ness:dns-reverse-proxy-config
-    restart: unless-stopped
-    depends_on:
-      - emercoin-core
-
   i2p-yggdrasil:
     image: nessnetwork/i2p-yggdrasil
     container_name: i2p-yggdrasil
@@ -153,6 +136,23 @@ services:
     restart: unless-stopped
     depends_on:
       - privateness
+      - emercoin-core
+
+  dns-reverse-proxy:
+    image: nessnetwork/dns-reverse-proxy
+    container_name: dns-reverse-proxy
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "8053:8053"
+    environment:
+      - EMERCOIN_HOST=emercoin-core
+      - EMERCOIN_PORT=6662
+      - EMERCOIN_USER=${EMERCOIN_RPC_USER:-rpcuser}
+      - EMERCOIN_PASS=${EMERCOIN_RPC_PASS:-rpcpassword}
+      - DNS_NVS_KEY=ness:dns-reverse-proxy-config
+    restart: unless-stopped
+    depends_on:
       - emercoin-core
 
 volumes:

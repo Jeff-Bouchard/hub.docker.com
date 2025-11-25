@@ -338,17 +338,85 @@ remove_everything_local() {
   echo -e "${green}Docker cleanup complete.${reset}"
 }
 
+context_size() {
+  local path="$1"
+  if command -v du >/dev/null 2>&1; then
+    du -sh "$path" 2>/dev/null | awk '{print $1}'
+  else
+    echo "?"
+  fi
+}
+
+build_single_image() {
+  echo
+  local images=(
+    "emercoin-core"
+    "yggdrasil"
+    "dns-reverse-proxy"
+    "skywire"
+    "privateness"
+    "ness-blockchain"
+    "pyuheprng"
+    "privatenumer"
+    "privatenesstools"
+    "pyuheprng-privatenesstools"
+    "ipfs"
+    "i2p-yggdrasil"
+    "amneziawg"
+    "skywire-amneziawg"
+    "amnezia-exit"
+    "ness-unified"
+  )
+
+  echo -e "${green}Build single image (with context size hints):${reset}"
+  local idx=1
+  for img in "${images[@]}"; do
+    local size
+    size=$(context_size "${SCRIPT_DIR}/${img}")
+    echo "  ${idx}) ${img} (context ~${size})"
+    idx=$((idx+1))
+  done
+  echo "  0) Back"
+  echo
+  read -rp "Select an image: " choice
+
+  if [ "$choice" = "0" ]; then
+    return 0
+  fi
+
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#images[@]}" ]; then
+    echo "Invalid choice."
+    return 1
+  fi
+
+  local image="${images[$((choice-1))]}"
+  require_docker || return 1
+
+  local context_path="${SCRIPT_DIR}/${image}"
+  if [ ! -d "$context_path" ]; then
+    echo "Build context not found: $context_path"
+    return 1
+  fi
+
+  local docker_user="${DOCKER_USER:-nessnetwork}"
+  echo
+  echo -e "${yellow}Building ${docker_user}/${image}:latest...${reset}"
+  docker build -t "${docker_user}/${image}:latest" "$context_path"
+}
+
 build_images_menu() {
   echo
   echo -e "${green}Build Images:${reset}"
-  echo "  1) build-all.sh"
-  echo "  2) build-multiarch.sh"
+  echo "  1) build-all.sh (all images)"
+  echo "  2) build-multiarch.sh (multi-arch, pushes to registry)"
+  echo "  3) Build single image (with context size hints)"
   echo "  0) Back"
   echo
   read -rp "Select option: " b_choice
   case "$b_choice" in
     1) ./build-all.sh ;;
     2) ./build-multiarch.sh ;;
+    3) build_single_image ;;
     0) return 0 ;;
     *) echo "Invalid option." ;;
   esac
