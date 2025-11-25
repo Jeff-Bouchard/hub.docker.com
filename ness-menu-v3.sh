@@ -247,6 +247,23 @@ compose_up_services() {
   compose up -d "${services[@]}"
 }
 
+service_status() {
+  local svc="$1"
+
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "UNKNOWN"
+    return 0
+  fi
+
+  if docker ps --format '{{.Names}}' | grep -q "^${svc}$"; then
+    echo "RUNNING"
+  elif docker ps -a --format '{{.Names}}' | grep -q "^${svc}$"; then
+    echo "STOPPED"
+  else
+    echo "NOT PRESENT"
+  fi
+}
+
 start_single_service() {
   local svc="$1"
   local label="$2"
@@ -346,7 +363,33 @@ start_stack() {
 
 stack_status() {
   require_docker || return 1
-  compose ps
+  echo
+  echo -e "${yellow}docker compose ps:${reset}"
+  compose ps || true
+
+  echo
+  echo -e "${green}Key service statuses:${reset}"
+  local svc label status color
+
+  for svc label in \
+    emercoin-core "Emercoin Core" \
+    privateness   "Privateness" \
+    pyuheprng-privatenesstools "pyuheprng-privatenesstools" \
+    dns-reverse-proxy "DNS reverse proxy" \
+    skywire       "Skywire" \
+    yggdrasil     "Yggdrasil" \
+    i2p-yggdrasil "I2P-Yggdrasil" \
+    amneziawg     "AmneziaWG" \
+    skywire-amneziawg "Skywire-AmneziaWG"
+  do
+    status=$(service_status "$svc")
+    case "$status" in
+      RUNNING) color="$green" ;;
+      STOPPED) color="$red" ;;
+      *)       color="$yellow" ;;
+    esac
+    printf "  %-24s %b%s%b\n" "$label" "$color" "$status" "$reset"
+  done
 }
 
 logs_stack() {
@@ -454,6 +497,14 @@ service_control_menu() {
   while true; do
     echo
     echo -e "${green}Service: ${label} (${svc})${reset}"
+    local status color
+    status=$(service_status "$svc")
+    case "$status" in
+      RUNNING) color="$green" ;;
+      STOPPED) color="$red" ;;
+      *) color="$yellow" ;;
+    esac
+    echo -e "  Status: ${color}${status}${reset}"
     echo "  1) Start"
     echo "  2) Stop"
     echo "  0) Back"
@@ -520,6 +571,265 @@ stack_menu() {
 
 check_entropy() {
   echo -e "${yellow}Entropy check placeholder:${reset} ensure UHE 1536-bit generators are active (RC4OK + UHEPRNG)."
+}
+
+ping_host() {
+  local host="$1"
+  if ping -c 1 127.0.0.1 >/dev/null 2>&1; then
+    ping -c 2 "$host"
+  else
+    ping -n 2 "$host"
+  fi
+}
+
+check_tcp_port() {
+  local host="$1" port="$2" label="$3"
+  echo "-- Checking TCP ${host}:${port} (${label})"
+  if command -v nc >/dev/null 2>&1; then
+    if nc -z "$host" "$port" >/dev/null 2>&1; then
+      echo -e " ${green}${check_ok_symbol}${reset} ${label} reachable on ${host}:${port}"
+      return 0
+    fi
+  elif ( : < /dev/tcp/127.0.0.1/1 ) 2>/dev/null; then
+    if : < /dev/tcp/$host/$port 2>/dev/null; then
+      echo -e " ${green}${check_ok_symbol}${reset} ${label} reachable on ${host}:${port}"
+      return 0
+    fi
+  else
+    if curl -s --max-time 3 "http://${host}:${port}" >/dev/null 2>&1; then
+      echo -e " ${green}${check_ok_symbol}${reset} ${label} HTTP reachable on ${host}:${port}"
+      return 0
+    fi
+  fi
+  echo -e " ${red}${check_fail_symbol}${reset} ${label} NOT reachable on ${host}:${port}"
+  return 1
+}
+
+test_pyuheprng() {
+  echo
+  echo -e "${yellow}Testing pyuheprng HTTP health (port 5000)...${reset}"
+  if curl -s --max-time 5 "http://127.0.0.1:5000/health" >/dev/null 2>&1; then
+    echo -e " ${green}${check_ok_symbol}${reset} /health responding on 5000"
+  else
+    echo -e " ${yellow}No /health endpoint detectable, falling back to TCP probe...${reset}"
+    check_tcp_port 127.0.0.1 5000 "pyuheprng"
+  fi
+}
+
+test_privatenesstools() {
+  echo
+  echo -e "${yellow}Testing privatenesstools HTTP (port 8888)...${reset}"
+  if curl -s --max-time 5 "http://127.0.0.1:8888/health" >/dev/null 2>&1; then
+    echo -e " ${green}${check_ok_symbol}${reset} /health responding on 8888"
+  else
+    echo -e " ${yellow}No /health endpoint detectable, falling back to TCP probe...${reset}"
+    check_tcp_port 127.0.0.1 8888 "privatenesstools"
+  fi
+}
+
+test_dns_reverse_proxy() {
+  echo
+  echo -e "${yellow}Testing dns-reverse-proxy listener (ports ${DNS_PROXY_HOST_PORT} and 8053)...${reset}"
+  check_tcp_port 127.0.0.1 "${DNS_PROXY_HOST_PORT}" "dns-reverse-proxy (DNS)" || true
+  check_tcp_port 127.0.0.1 8053 "dns-reverse-proxy (control/API)" || true
+}
+
+test_skywire() {
+  echo
+  echo -e "${yellow}Testing Skywire visor HTTP (port 8000)...${reset}"
+  check_tcp_port 127.0.0.1 8000 "Skywire visor"
+}
+
+health_check() {
+  echo
+  echo -e "${yellow}Core node health check...${reset}"
+  require_docker || return 1
+
+  local overall_rc=0
+  local rpc_rc=0
+
+  echo
+  echo "== Docker services (Ness stack) =="
+  compose ps
+  local rc_ps=$?
+  if [ "$rc_ps" -eq 0 ]; then
+    echo -e " ${green}${check_ok_symbol}${reset} Docker stack reachable"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} Docker stack reachable"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== Privateness JSON-RPC (port 6660) =="
+  local priv_rpc
+  priv_rpc=$(curl -s -X POST \
+    -H 'content-type: text/plain;' \
+    --data-binary '{"jsonrpc":"1.0","id":"ness-health","method":"getinfo","params":[]}' \
+    http://127.0.0.1:6660/ 2>/dev/null || true)
+  if echo "$priv_rpc" | grep -q '"result"'; then
+    echo "$priv_rpc" | tr '\n' ' ' | sed 's/  */ /g' | head -c 200; echo
+    echo -e " ${green}${check_ok_symbol}${reset} Privateness JSON-RPC responding on 6660"
+  else
+    echo "$priv_rpc" | head -c 200; echo
+    echo -e " ${red}${check_fail_symbol}${reset} Privateness JSON-RPC failed on 6660"
+    rpc_rc=1
+  fi
+
+  echo
+  echo "== Privateness vs explorer (seq/block_hash) =="
+  local explorer_health local_status
+  explorer_health=$(curl -s https://ness-explorer.magnetosphere.net/api/health 2>/dev/null || true)
+  local_status=$(docker exec privateness privateness-cli status 2>/dev/null || true)
+
+  if [ -n "$explorer_health" ] && [ -n "$local_status" ]; then
+    echo "-- Explorer:"
+    echo "$explorer_health" | grep -E 'seq|block_hash' || true
+    echo
+    echo "-- Local (privateness-cli status):"
+    echo "$local_status" | grep -E 'seq|block_hash' || true
+
+    local exp_seq loc_seq exp_hash loc_hash
+    exp_seq=$(echo "$explorer_health" | grep -o '"seq":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
+    loc_seq=$(echo "$local_status" | grep -o '"seq":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
+    exp_hash=$(echo "$explorer_health" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | head -n1)
+    loc_hash=$(echo "$local_status" | grep -o '"block_hash":"[^"]*"' | sed 's/.*"block_hash":"//;s/".*//' | head -n1)
+
+    if [ -n "$exp_seq" ] && [ "$exp_seq" = "$loc_seq" ] && \
+       [ -n "$exp_hash" ] && [ "$exp_hash" = "$loc_hash" ]; then
+      echo -e " ${green}${check_ok_symbol}${reset} Privateness seq/hash match explorer"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} Privateness seq/hash MISMATCH explorer"
+      overall_rc=1
+    fi
+  else
+    echo "Could not obtain explorer or local Privateness status."
+    echo -e " ${red}${check_fail_symbol}${reset} Privateness vs explorer check failed"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== Emercoin JSON-RPC (port ${EMERCOIN_RPC_PORT:-6662}) =="
+  local rpc_port="${EMERCOIN_RPC_PORT:-6662}"
+  local rpc_user="${EMERCOIN_RPC_USER:-rpcuser}"
+  local rpc_pass="${EMERCOIN_RPC_PASS:-rpcpassword}"
+
+  local emc_conf="${EMERCOIN_CONF:-$HOME/.emercoin/emercoin.conf}"
+  if [ -f "$emc_conf" ]; then
+    local conf_user conf_pass conf_port
+    conf_user=$(grep -E '^[[:space:]]*rpcuser=' "$emc_conf" | tail -n1 | sed 's/.*=//')
+    conf_pass=$(grep -E '^[[:space:]]*rpcpassword=' "$emc_conf" | tail -n1 | sed 's/.*=//')
+    conf_port=$(grep -E '^[[:space:]]*rpcport=' "$emc_conf" | tail -n1 | sed 's/.*=//')
+
+    [ -n "$conf_user" ] && rpc_user="$conf_user"
+    [ -n "$conf_pass" ] && rpc_pass="$conf_pass"
+    [ -n "$conf_port" ] && rpc_port="$conf_port"
+  fi
+
+  local emc_rpc
+  emc_rpc=$(curl -s --user "$rpc_user:$rpc_pass" \
+    -H 'content-type: text/plain;' \
+    --data-binary '{"jsonrpc":"1.0","id":"ness-health","method":"getblockchaininfo","params":[]}' \
+    "http://127.0.0.1:${rpc_port}/" 2>/dev/null || true)
+  if echo "$emc_rpc" | grep -q '"result"'; then
+    echo "$emc_rpc" | tr '\n' ' ' | sed 's/  */ /g' | head -c 200; echo
+    echo -e " ${green}${check_ok_symbol}${reset} Emercoin JSON-RPC responding on ${rpc_port}"
+  else
+    echo "$emc_rpc" | head -c 200; echo
+    echo -e " ${red}${check_fail_symbol}${reset} Emercoin JSON-RPC failed on ${rpc_port}"
+    rpc_rc=1
+  fi
+
+  echo
+  echo "== Emercoin vs explorer =="
+  local emc_height_remote emc_hash_remote
+  emc_height_remote=$(curl -s https://explorer.emercoin.com/api/stats/block_height 2>/dev/null || true)
+  emc_hash_remote=$(curl -s https://explorer.emercoin.com/api/block/latest 2>/dev/null || true)
+
+  if [ -n "$emc_height_remote" ] && [ -n "$emc_hash_remote" ] && echo "$emc_rpc" | grep -q '"result"'; then
+    echo "-- Explorer height:"
+    echo "$emc_height_remote" || true
+    echo
+    echo "-- Local getblockchaininfo (blocks):"
+    echo "$emc_rpc" | grep -o '"blocks":[0-9]*' | head -n1 || true
+
+    local remote_height local_height
+    remote_height=$(echo "$emc_height_remote" | tr -dc '0-9' | head -c 18)
+    local_height=$(echo "$emc_rpc" | grep -o '"blocks":[0-9]*' | sed 's/[^0-9]//g' | head -n1)
+
+    echo
+    echo "-- Explorer latest block hash:"
+    echo "$emc_hash_remote" | grep -o '"blockhash":"[^"]*"' || true
+    echo
+    echo "-- Local best block hash (JSON-RPC getbestblockhash):"
+
+    local emc_hash_local
+    emc_hash_local=$(curl -s --user "$rpc_user:$rpc_pass" \
+      -H 'content-type: text/plain;' \
+      --data-binary '{"jsonrpc":"1.0","id":"ness-health","method":"getbestblockhash","params":[]}' \
+      "http://127.0.0.1:${rpc_port}/" 2>/dev/null || true)
+
+    echo "$emc_hash_local" | head -c 200; echo
+
+    local remote_hash local_hash
+    remote_hash=$(echo "$emc_hash_remote" | grep -o '"blockhash":"[^"]*"' | sed 's/.*"blockhash":"//;s/".*//' | head -n1)
+    local_hash=$(echo "$emc_hash_local" | grep -o '"result":"[^"]*"' | sed 's/.*"result":"//;s/".*//' | head -n1)
+
+    if [ -n "$remote_height" ] && [ -n "$local_height" ] && \
+       [ "$remote_height" = "$local_height" ] && \
+       [ -n "$remote_hash" ] && [ -n "$local_hash" ] && \
+       [ "$remote_hash" = "$local_hash" ]; then
+      echo -e " ${green}${check_ok_symbol}${reset} Emercoin height/hash match explorer"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} Emercoin height/hash MISMATCH explorer"
+      overall_rc=1
+    fi
+  else
+    echo "Could not obtain explorer or local Emercoin info."
+    echo -e " ${red}${check_fail_symbol}${reset} Emercoin vs explorer check failed"
+    overall_rc=1
+  fi
+
+  echo
+  echo "== Tier 1 entropy / tools (pyuheprng + privatenesstools) =="
+  test_pyuheprng || overall_rc=1
+  test_privatenesstools || overall_rc=1
+
+  if [ "$rpc_rc" -ne 0 ]; then
+    overall_rc=1
+  fi
+
+  echo
+  if [ "$overall_rc" -eq 0 ]; then
+    echo -e "${green}===== GLOBAL STATUS: SUCCESS (RPC + explorer) =====${reset}"
+  else
+    echo -e "${red}===== GLOBAL STATUS: FAILED (RPC + explorer) =====${reset}"
+  fi
+}
+
+test_menu() {
+  while true; do
+    echo
+    echo -e "${green}Test / Status menu:${reset}"
+    echo "  1) Core node health check"
+    echo "  2) Entropy check"
+    echo "  3) Test pyuheprng (port 5000)"
+    echo "  4) Test privatenesstools (port 8888)"
+    echo "  5) Test dns-reverse-proxy (ports ${DNS_PROXY_HOST_PORT}/8053)"
+    echo "  6) Test Skywire visor (port 8000)"
+    echo "  0) Back"
+    echo
+    read -rp "Select an option: " choice
+    case "$choice" in
+      1) health_check ;;
+      2) check_entropy ;;
+      3) test_pyuheprng ;;
+      4) test_privatenesstools ;;
+      5) test_dns_reverse_proxy ;;
+      6) test_skywire ;;
+      0) return 0 ;;
+      *) echo "Invalid choice." ;;
+    esac
+  done
 }
 
 print_info() {
@@ -599,7 +909,7 @@ menu() {
       "${accent}[3]${reset} Start/stop stack"
       "${accent}[4]${reset} Show stack status"
       "${accent}[5]${reset} Tail stack logs"
-      "${accent}[6]${reset} Check entropy"
+      "${accent}[6]${reset} Test / Status menu"
       "${accent}[7]${reset} Remove everything local"
       "${accent}[8]${reset} Rename Reality Modes"
       "${accent}[9]${reset} Exit"
@@ -618,7 +928,7 @@ menu() {
       3) stack_menu ;;
       4) stack_status ;;
       5) logs_stack ;;
-      6) check_entropy ;;
+      6) test_menu ;;
       7) remove_everything_local ;;
       8) edit_dns_mode_labels ;;
       9) exit 0 ;;
