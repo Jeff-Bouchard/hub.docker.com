@@ -334,7 +334,7 @@ start_stack() {
       # Start Emercoin core first, wait for real RPC answers, then bring up the rest
       compose_up_services emercoin-core || return 1
       wait_for_emercoin_core || true
-      compose_up_services privateness skywire dns-reverse-proxy pyuheprng-privatenesstools || return 1
+      compose_up_services privateness dns-reverse-proxy pyuheprng-privatenesstools || return 1
       ;;
     skyminer)
       # Skyminer: same as Pi3 but without the Skywire container
