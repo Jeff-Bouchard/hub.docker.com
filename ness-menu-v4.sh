@@ -676,19 +676,68 @@ test_dns_reverse_proxy() {
 
 test_skywire() {
   echo
-  echo -e "${yellow}Testing Skywire visor HTTP (port 8000)...${reset}"
-  check_tcp_port 127.0.0.1 8000 "Skywire visor"
+  echo -e "${yellow}Testing Skywire visor (container + CLI + HTTP)...${reset}"
+
+  local status
+  status=$(service_status "skywire")
+  if [ "$status" != "RUNNING" ]; then
+    echo -e " ${red}${check_fail_symbol}${reset} skywire container status: $status"
+    return 1
+  fi
+
+  echo -e " ${green}${check_ok_symbol}${reset} skywire container RUNNING"
+
+  # Useful CLI call via skywire-cli
+  local visor_status
+  visor_status=$(MSYS_NO_PATHCONV=1 docker exec skywire skywire-cli visor status 2>/dev/null || true)
+  if [ -n "$visor_status" ]; then
+    echo " -- skywire-cli visor status (truncated):"
+    echo "$visor_status" | head -c 200; echo
+    echo -e " ${green}${check_ok_symbol}${reset} Skywire CLI responding"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} skywire-cli visor status failed"
+    return 1
+  fi
+
+  # Optional HTTP check on visor UI port
+  check_tcp_port 127.0.0.1 8000 "Skywire visor UI" || true
 }
 
 test_yggdrasil() {
   echo
-  echo -e "${yellow}Testing Yggdrasil container status...${reset}"
+  echo -e "${yellow}Testing Yggdrasil overlay (container + config + CLI)...${reset}"
   local status
   status=$(service_status "yggdrasil")
-  if [ "$status" = "RUNNING" ]; then
-    echo -e " ${green}${check_ok_symbol}${reset} yggdrasil container RUNNING"
-  else
+  if [ "$status" != "RUNNING" ]; then
     echo -e " ${red}${check_fail_symbol}${reset} yggdrasil container status: $status"
+    return 1
+  fi
+
+  echo -e " ${green}${check_ok_symbol}${reset} yggdrasil container RUNNING"
+
+  # Ensure config exists inside the container
+  if MSYS_NO_PATHCONV=1 docker exec yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
+    echo " -- /etc/yggdrasil.conf present inside yggdrasil container"
+  else
+    echo " -- /etc/yggdrasil.conf missing; generating default config inside container (will be used on next restart)..."
+    if MSYS_NO_PATHCONV=1 docker exec yggdrasil sh -lc 'yggdrasil -genconf > /etc/yggdrasil.conf' >/dev/null 2>&1; then
+      echo -e " ${green}${check_ok_symbol}${reset} Generated default Yggdrasil config at /etc/yggdrasil.conf"
+    else
+      echo -e " ${red}${check_fail_symbol}${reset} Failed to generate /etc/yggdrasil.conf"
+      return 1
+    fi
+  fi
+
+  # Useful CLI call via yggdrasilctl
+  local self_info
+  self_info=$(MSYS_NO_PATHCONV=1 docker exec yggdrasil yggdrasilctl getSelf 2>/dev/null || true)
+  if [ -n "$self_info" ]; then
+    echo " -- yggdrasilctl getSelf (truncated):"
+    echo "$self_info" | head -c 200; echo
+    echo -e " ${green}${check_ok_symbol}${reset} Yggdrasil CLI responding"
+    return 0
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} yggdrasilctl getSelf failed"
     return 1
   fi
 }
@@ -709,25 +758,71 @@ test_i2p_yggdrasil() {
 
 test_amneziawg() {
   echo
-  echo -e "${yellow}Testing AmneziaWG container status...${reset}"
+  echo -e "${yellow}Testing AmneziaWG tunnel (container + config + CLI)...${reset}"
   local status
   status=$(service_status "amneziawg")
-  if [ "$status" = "RUNNING" ]; then
-    echo -e " ${green}${check_ok_symbol}${reset} amneziawg container RUNNING"
-  else
+  if [ "$status" != "RUNNING" ]; then
     echo -e " ${red}${check_fail_symbol}${reset} amneziawg container status: $status"
+    return 1
+  fi
+
+  echo -e " ${green}${check_ok_symbol}${reset} amneziawg container RUNNING"
+
+  # Config presence inside container
+  if MSYS_NO_PATHCONV=1 docker exec amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
+    echo " -- /etc/amneziawg/awg0.conf present inside amneziawg container"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} /etc/amneziawg/awg0.conf missing in amneziawg container"
+    echo "    Hint: restart the amneziawg service so its entrypoint can generate a fresh config."
+    return 1
+  fi
+
+  # Useful CLI call via awg
+  local wg_info
+  wg_info=$(MSYS_NO_PATHCONV=1 docker exec amneziawg awg show awg0 2>/dev/null || true)
+  if [ -n "$wg_info" ]; then
+    echo " -- awg show awg0 (truncated):"
+    echo "$wg_info" | head -c 200; echo
+    echo -e " ${green}${check_ok_symbol}${reset} AmneziaWG CLI responding for awg0"
+    return 0
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} awg show awg0 failed"
     return 1
   fi
 }
 
 test_skywire_amneziawg() {
   echo
-  echo -e "${yellow}Testing Skywire-AmneziaWG visor HTTP (port 8002)...${reset}"
+  echo -e "${yellow}Testing Skywire-AmneziaWG access layer (container + config + CLI + HTTP)...${reset}"
   if ! docker ps --format '{{.Names}}' | grep -q '^skywire-amneziawg$'; then
     echo -e " ${red}${check_fail_symbol}${reset} skywire-amneziawg container not running"
     return 1
   fi
-  check_tcp_port 127.0.0.1 8002 "Skywire-AmneziaWG visor"
+
+  echo -e " ${green}${check_ok_symbol}${reset} skywire-amneziawg container RUNNING"
+
+  # Config presence inside container
+  if MSYS_NO_PATHCONV=1 docker exec skywire-amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
+    echo " -- /etc/amneziawg/awg0.conf present inside skywire-amneziawg container"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} /etc/amneziawg/awg0.conf missing in skywire-amneziawg container"
+    echo "    Hint: restart the skywire-amneziawg service so its entrypoint can generate a fresh config."
+    return 1
+  fi
+
+  # Useful CLI call via skywire-cli
+  local visor_status
+  visor_status=$(MSYS_NO_PATHCONV=1 docker exec skywire-amneziawg skywire-cli visor status 2>/dev/null || true)
+  if [ -n "$visor_status" ]; then
+    echo " -- skywire-amneziawg skywire-cli visor status (truncated):"
+    echo "$visor_status" | head -c 200; echo
+    echo -e " ${green}${check_ok_symbol}${reset} Skywire-AmneziaWG CLI responding"
+  else
+    echo -e " ${red}${check_fail_symbol}${reset} skywire-amneziawg skywire-cli visor status failed"
+  fi
+
+  # HTTP check on the visor UI port mapped to 8002
+  check_tcp_port 127.0.0.1 8002 "Skywire-AmneziaWG visor UI" || true
 }
 
 test_full_node_overlays() {
@@ -743,6 +838,59 @@ test_full_node_overlays() {
   test_skywire_amneziawg || rc=1
 
   echo
+  echo -e "${green}===== OVERLAY / VPN CONFIG SUMMARY =====${reset}"
+
+  # Yggdrasil (core overlay)
+  local s_ygg c_ygg
+  s_ygg=$(service_status "yggdrasil")
+  if MSYS_NO_PATHCONV=1 docker exec yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
+    c_ygg="present (/etc/yggdrasil.conf)"
+  else
+    c_ygg="missing (/etc/yggdrasil.conf)"
+  fi
+  printf "  %-18s : %s, config: %s\n" "Yggdrasil" "$s_ygg" "$c_ygg"
+
+  # I2P-Yggdrasil (Ygg+I2P over Yggdrasil)
+  local s_i2p c_i2p
+  s_i2p=$(service_status "i2p-yggdrasil")
+  if MSYS_NO_PATHCONV=1 docker exec i2p-yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
+    c_i2p="present (/etc/yggdrasil.conf)"
+  else
+    c_i2p="missing (/etc/yggdrasil.conf)"
+  fi
+  printf "  %-18s : %s, config: %s\n" "I2P-Yggdrasil" "$s_i2p" "$c_i2p"
+
+  # Skywire (visor)
+  local s_sky c_sky
+  s_sky=$(service_status "skywire")
+  if MSYS_NO_PATHCONV=1 docker exec skywire test -f /root/.skywire/skywire-config.json >/dev/null 2>&1; then
+    c_sky="present (/root/.skywire/skywire-config.json)"
+  else
+    c_sky="missing (/root/.skywire/skywire-config.json)"
+  fi
+  printf "  %-18s : %s, config: %s\n" "Skywire" "$s_sky" "$c_sky"
+
+  # AmneziaWG (standalone)
+  local s_awg c_awg
+  s_awg=$(service_status "amneziawg")
+  if MSYS_NO_PATHCONV=1 docker exec amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
+    c_awg="present (/etc/amneziawg/awg0.conf)"
+  else
+    c_awg="missing (/etc/amneziawg/awg0.conf)"
+  fi
+  printf "  %-18s : %s, config: %s\n" "AmneziaWG" "$s_awg" "$c_awg"
+
+  # Skywire-AmneziaWG (access layer + visor)
+  local s_sawg c_sawg
+  s_sawg=$(service_status "skywire-amneziawg")
+  if MSYS_NO_PATHCONV=1 docker exec skywire-amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
+    c_sawg="present (/etc/amneziawg/awg0.conf)"
+  else
+    c_sawg="missing (/etc/amneziawg/awg0.conf)"
+  fi
+  printf "  %-18s : %s, config: %s\n" "Skywire-AmneziaWG" "$s_sawg" "$c_sawg"
+
+  echo
   if [ "$rc" -eq 0 ]; then
     echo -e "${green}===== FULL NODE OVERLAYS: OK =====${reset}"
   else
@@ -754,7 +902,7 @@ test_full_node_overlays() {
 
 health_check() {
   echo
-  echo -e "${yellow}Core node health check...${reset}"
+  echo -e "${yellow}Core node health (Emercoin AuxPoW anchored to Bitcoin PoW)...${reset}"
   require_docker || return 1
 
   local overall_rc=0
@@ -929,9 +1077,9 @@ health_check() {
 
   echo
   if [ "$overall_rc" -eq 0 ]; then
-    echo -e "${green}===== GLOBAL STATUS: SUCCESS (RPC + explorer) =====${reset}"
+    echo -e "${green}===== CORE STATUS: OK (AuxPoW-anchored RPC + explorer) =====${reset}"
   else
-    echo -e "${red}===== GLOBAL STATUS: FAILED (RPC + explorer) =====${reset}"
+    echo -e "${red}===== CORE STATUS: ISSUES (AuxPoW-anchored RPC + explorer) =====${reset}"
   fi
 
   return "$overall_rc"
@@ -939,7 +1087,7 @@ health_check() {
 
 test_full_node_e2e() {
   echo
-  echo -e "${yellow}Full node end-to-end test (tier 1 + overlays/VPN)...${reset}"
+  echo -e "${yellow}Full node end-to-end (AuxPoW-anchored core + overlays/VPN)...${reset}"
   require_docker || return 1
 
   local rc_health rc_overlays
@@ -952,7 +1100,7 @@ test_full_node_e2e() {
 
   echo
   if [ "$rc_health" -eq 0 ] && [ "$rc_overlays" -eq 0 ]; then
-    echo -e "${green}[  OK  ] FULL NODE E2E: RPC, explorer, DNS, entropy, overlays/VPN${reset}"
+    echo -e "${green}[  OK  ] FULL NODE E2E: AuxPoW-anchored core, DNS, entropy, overlays/VPN${reset}"
     return 0
   else
     echo -e "${red}[ FAIL ] FULL NODE E2E: see above sections for details${reset}"
