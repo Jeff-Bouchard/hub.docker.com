@@ -1156,6 +1156,95 @@ test_menu() {
   done
 }
 
+api_dispatch() {
+  local action="" profile_in="" dns_mode_in="" image_in=""
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --action)
+        action="$2"; shift 2 ;;
+      --profile)
+        profile_in="$2"; shift 2 ;;
+      --dns-mode)
+        dns_mode_in="$2"; shift 2 ;;
+      --image)
+        image_in="$2"; shift 2 ;;
+      *)
+        shift ;;
+    esac
+  done
+
+  if [ -n "$profile_in" ]; then
+    PROFILE="$profile_in"
+  fi
+
+  if [ -n "$dns_mode_in" ]; then
+    DNS_MODE="$dns_mode_in"
+    apply_dns_mode
+  fi
+
+  if [ -n "$image_in" ]; then
+    IMAGE="$image_in"
+  fi
+
+  case "$action" in
+    start-stack)
+      start_stack ;;
+    stop-stack)
+      compose down || true
+      cleanup_dns_reverse_proxy || true
+      check_port53_free || true ;;
+    stack-status)
+      stack_status ;;
+    tail-logs)
+      compose logs --tail=200 ;;
+    build-all)
+      ./build-all.sh ;;
+    build-multiarch)
+      ./build-multiarch.sh ;;
+    build-image)
+      if [ -z "${IMAGE:-}" ]; then
+        echo "No image specified for build-image action (use --image)." >&2
+        return 1
+      fi
+      local context_path="${SCRIPT_DIR}/${IMAGE}"
+      if [ ! -d "$context_path" ]; then
+        echo "Build context not found: $context_path" >&2
+        return 1
+      fi
+      local docker_user="${DOCKER_USER:-nessnetwork}"
+      echo "Building ${docker_user}/${IMAGE}:latest from ${context_path}..."
+      docker build -t "${docker_user}/${IMAGE}:latest" "$context_path" ;;
+    health-check)
+      health_check ;;
+    test-full-node-overlays)
+      test_full_node_overlays ;;
+    test-full-node-e2e)
+      test_full_node_e2e ;;
+    test-dns-reverse-proxy)
+      test_dns_reverse_proxy ;;
+    test-pyuheprng)
+      test_pyuheprng ;;
+    test-skywire)
+      test_skywire ;;
+    nuke-local)
+      remove_everything_local ;;
+    set-dns-mode)
+      echo "DNS mode set to: ${DNS_MODE} (${DNS_DESC})"
+      echo "System-wide resolver update and DNS cache flush should be handled by the host environment." ;;
+    sync-labels)
+      echo "sync-labels is interactive in the CLI; no non-interactive API implementation yet." ;;
+    exit)
+      echo "Exit requested via API (no-op)." ;;
+    "")
+      echo "No --action provided for api mode." >&2
+      return 1 ;;
+    *)
+      echo "Unknown action: ${action}" >&2
+      return 1 ;;
+  esac
+}
+
 print_info() {
   echo -e "${panel_bg}${title_glow}"
   logo 2>/dev/null || true
@@ -1264,4 +1353,10 @@ menu() {
 
 load_dns_labels
 apply_dns_mode
-menu
+
+if [ "${1-}" = "api" ]; then
+  shift
+  api_dispatch "$@"
+else
+  menu
+fi
