@@ -7,6 +7,7 @@ cd "$SCRIPT_DIR"
 
 COMPOSE_FILE="docker-compose.yml"
 DOCKER_USER="nessnetwork"
+CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
 PROFILE="pi3"            # pi3 | skyminer | full | mcp-server | mcp-client
 DNS_MODE="hybrid"          # icann | hybrid | emerdns
 
@@ -172,11 +173,15 @@ select_profile() {
 }
 
 require_docker() {
-  if ! command -v docker >/dev/null 2>&1; then
-    echo -e "${red}Docker is required but not installed.${reset}"
+  if ! command -v "$CONTAINER_ENGINE" >/dev/null 2>&1; then
+    echo -e "${red}Container engine '$CONTAINER_ENGINE' is required but not installed.${reset}"
     return 1
   fi
   return 0
+}
+
+docker() {
+  "$CONTAINER_ENGINE" "$@"
 }
 
 compose() {
@@ -250,7 +255,7 @@ compose_up_services() {
 service_status() {
   local svc="$1"
 
-  if ! command -v docker >/dev/null 2>&1; then
+  if ! command -v "$CONTAINER_ENGINE" >/dev/null 2>&1; then
     echo "UNKNOWN"
     return 0
   fi

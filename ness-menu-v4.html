@@ -483,6 +483,14 @@
               <select id="profileSelect"></select>
             </label>
             <small>Pick the hardware/service bundle that Start Stack will control.</small>
+            <label>
+              <span>Container engine</span>
+              <select id="engineSelect">
+                <option value="docker">Docker</option>
+                <option value="podman">Podman</option>
+              </select>
+            </label>
+            <small>Use Docker or Podman to run this stack.</small>
           </div>
         </div>
       </div>
@@ -628,7 +636,8 @@
       dnsLabels: "ness.dnsLabels",
       dnsMode: "ness.dnsMode",
       profile: "ness.profile",
-      endpoint: "ness.apiEndpoint"
+      endpoint: "ness.apiEndpoint",
+      engine: "ness.engine"
     };
 
     const DEFAULT_LABELS = {
@@ -682,7 +691,8 @@
       dnsMode: localStorage.getItem(STORAGE_KEYS.dnsMode) || "hybrid",
       dnsLabels: JSON.parse(localStorage.getItem(STORAGE_KEYS.dnsLabels) || "null") || { ...DEFAULT_LABELS },
       profile: localStorage.getItem(STORAGE_KEYS.profile) || "pi3",
-      endpoint: localStorage.getItem(STORAGE_KEYS.endpoint) || ""
+      endpoint: localStorage.getItem(STORAGE_KEYS.endpoint) || "",
+      engine: localStorage.getItem(STORAGE_KEYS.engine) || "docker"
     };
 
     const refs = {
@@ -690,6 +700,7 @@
       realityDropdown: document.getElementById("realityDropdown"),
       dnsForm: document.getElementById("dnsForm"),
       profileSelect: document.getElementById("profileSelect"),
+      engineSelect: document.getElementById("engineSelect"),
       realityText: document.querySelector('[data-role="reality-text"]'),
       profileText: document.querySelector('[data-role="profile-text"]'),
       actionLog: document.getElementById("actionLog"),
@@ -708,6 +719,7 @@
       localStorage.setItem(STORAGE_KEYS.profile, state.profile);
       localStorage.setItem(STORAGE_KEYS.dnsLabels, JSON.stringify(state.dnsLabels));
       localStorage.setItem(STORAGE_KEYS.endpoint, state.endpoint);
+      localStorage.setItem(STORAGE_KEYS.engine, state.engine);
     }
 
     function renderRealityButtons() {
@@ -733,6 +745,12 @@
       refs.profileText.textContent = PROFILES[state.profile]?.title || state.profile;
     }
 
+    function renderEngineSelect() {
+      if (!refs.engineSelect) return;
+      const value = state.engine || "docker";
+      refs.engineSelect.value = value;
+    }
+
     function populateDnsForm() {
       refs.dnsForm.icann.value = state.dnsLabels.icann;
       refs.dnsForm.hybrid.value = state.dnsLabels.hybrid;
@@ -747,6 +765,15 @@
         opt.value = name;
         opt.textContent = name;
         refs.singleImageSelect.appendChild(opt);
+      });
+    }
+
+    if (refs.engineSelect) {
+      refs.engineSelect.addEventListener("change", () => {
+        const value = refs.engineSelect.value || "docker";
+        state.engine = value;
+        persist();
+        log(`Container engine set to ${value}`, "info");
       });
     }
 
@@ -849,6 +876,7 @@
         action,
         profile: state.profile,
         dns_mode: state.dnsMode,
+        engine: state.engine,
         labels: state.dnsLabels,
         ...payload
       };
@@ -908,6 +936,7 @@
 
     renderRealityButtons();
     renderProfileSelect();
+    renderEngineSelect();
     populateDnsForm();
     populateSingleImageSelect();
   </script>

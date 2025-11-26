@@ -31,6 +31,28 @@ class MenuHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
+    def do_GET(self):
+        """Handle GETs without invoking any actions.
+
+        /api/menu is POST-only; for GET we return a helpful JSON error instead of 501.
+        /favicon.ico returns 204 to keep browser happy.
+        """
+        parsed = urlparse(self.path)
+        if parsed.path == "/favicon.ico":
+            # No content, just silence the browser's favicon requests
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            return
+
+        if parsed.path == "/api/menu":
+            self._set_headers(405)
+            self.wfile.write(b"{\"error\":\"Use POST with a JSON body for /api/menu; GET is not supported.\"}")
+            return
+
+        self._set_headers(404)
+        self.wfile.write(b"{\"error\":\"Not found\"}")
+
     def do_POST(self):
         parsed = urlparse(self.path)
         if parsed.path != "/api/menu":
@@ -52,6 +74,7 @@ class MenuHandler(BaseHTTPRequestHandler):
         action = data.get("action") or ""
         profile = data.get("profile") or ""
         dns_mode = data.get("dns_mode") or ""
+        engine = (data.get("engine") or "").strip()
         image = (data.get("image") or
                  (data.get("payload") or {}).get("image"))  # very small convenience
 
@@ -76,6 +99,8 @@ class MenuHandler(BaseHTTPRequestHandler):
 
         # Environment can be extended later (e.g. DNS labels, NRPT hints)
         env = os.environ.copy()
+        if engine:
+            env["CONTAINER_ENGINE"] = engine
 
         try:
             proc = subprocess.run(
@@ -98,6 +123,7 @@ class MenuHandler(BaseHTTPRequestHandler):
             "action": action,
             "profile": profile,
             "dns_mode": dns_mode,
+            "engine": engine or env.get("CONTAINER_ENGINE", ""),
             "exit_code": proc.returncode,
             "stdout": proc.stdout,
             "stderr": proc.stderr,
