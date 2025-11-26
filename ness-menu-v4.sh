@@ -143,9 +143,9 @@ profile_label() {
   case "$1" in
     pi3) echo "Pi 3 Essentials" ;;
     skyminer) echo "Skyminer (no Skywire container)" ;;
-    full) echo "Full Node" ;;
-    mcp-server) echo "MCP Server Suite" ;;
-    mcp-client) echo "MCP Client Suite" ;;
+    full) echo "Full Node (overlays + DNS + tools)" ;;
+    mcp-server) echo "MCP Server Suite (remote control)" ;;
+    mcp-client) echo "MCP Client Suite (apps & helpers)" ;;
     *) echo "$1" ;;
   esac
 }
@@ -155,9 +155,9 @@ select_profile() {
   echo -e "${green}Select Deployment Profile:${reset}"
   echo "  1) Pi 3 Essentials (Emercoin, Privateness, DNS, Skywire, Tools)"
   echo "  2) Skyminer (Emercoin, Privateness, DNS, Tools — no Skywire container)"
-  echo "  3) Full Node (Emercoin, Yggdrasil, I2P-Yggdrasil, Skywire, AmneziaWG, Skywire-AmneziaWG, DNS, pyuheprng, Privateness, Privatenesstools)"
-  echo "  4) MCP Server Suite (MCP daemons, wormhole rendezvous)"
-  echo "  5) MCP Client Suite (apps, QR helpers, wormhole client)"
+  echo "  3) Full Node (Emercoin core, overlays, DNS, pyuheprng, Privateness, Privatenesstools)"
+  echo "  4) MCP Server Suite (Emercoin/Privateness MCP daemons, wormhole rendezvous/transit)"
+  echo "  5) MCP Client Suite (MCP apps, QR helpers, wormhole client)"
   echo
   read -rp "Select profile [1-5]: " p_choice
   case "$p_choice" in
@@ -843,50 +843,70 @@ test_full_node_overlays() {
   # Yggdrasil (core overlay)
   local s_ygg c_ygg
   s_ygg=$(service_status "yggdrasil")
-  if MSYS_NO_PATHCONV=1 docker exec yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
-    c_ygg="present (/etc/yggdrasil.conf)"
+  if [ "$s_ygg" = "RUNNING" ] || [ "$s_ygg" = "STOPPED" ]; then
+    if MSYS_NO_PATHCONV=1 docker exec yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
+      c_ygg="present (/etc/yggdrasil.conf)"
+    else
+      c_ygg="missing (/etc/yggdrasil.conf)"
+    fi
   else
-    c_ygg="missing (/etc/yggdrasil.conf)"
+    c_ygg="n/a (container not present)"
   fi
   printf "  %-18s : %s, config: %s\n" "Yggdrasil" "$s_ygg" "$c_ygg"
 
   # I2P-Yggdrasil (Ygg+I2P over Yggdrasil)
   local s_i2p c_i2p
   s_i2p=$(service_status "i2p-yggdrasil")
-  if MSYS_NO_PATHCONV=1 docker exec i2p-yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
-    c_i2p="present (/etc/yggdrasil.conf)"
+  if [ "$s_i2p" = "RUNNING" ] || [ "$s_i2p" = "STOPPED" ]; then
+    if MSYS_NO_PATHCONV=1 docker exec i2p-yggdrasil test -f /etc/yggdrasil.conf >/dev/null 2>&1; then
+      c_i2p="present (/etc/yggdrasil.conf)"
+    else
+      c_i2p="missing (/etc/yggdrasil.conf)"
+    fi
   else
-    c_i2p="missing (/etc/yggdrasil.conf)"
+    c_i2p="n/a (container not present)"
   fi
   printf "  %-18s : %s, config: %s\n" "I2P-Yggdrasil" "$s_i2p" "$c_i2p"
 
   # Skywire (visor)
   local s_sky c_sky
   s_sky=$(service_status "skywire")
-  if MSYS_NO_PATHCONV=1 docker exec skywire test -f /root/.skywire/skywire-config.json >/dev/null 2>&1; then
-    c_sky="present (/root/.skywire/skywire-config.json)"
+  if [ "$s_sky" = "RUNNING" ] || [ "$s_sky" = "STOPPED" ]; then
+    if MSYS_NO_PATHCONV=1 docker exec skywire test -f /root/.skywire/skywire-config.json >/dev/null 2>&1; then
+      c_sky="present (/root/.skywire/skywire-config.json)"
+    else
+      c_sky="missing (/root/.skywire/skywire-config.json)"
+    fi
   else
-    c_sky="missing (/root/.skywire/skywire-config.json)"
+    c_sky="n/a (container not present)"
   fi
   printf "  %-18s : %s, config: %s\n" "Skywire" "$s_sky" "$c_sky"
 
   # AmneziaWG (standalone)
   local s_awg c_awg
   s_awg=$(service_status "amneziawg")
-  if MSYS_NO_PATHCONV=1 docker exec amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
-    c_awg="present (/etc/amneziawg/awg0.conf)"
+  if [ "$s_awg" = "RUNNING" ] || [ "$s_awg" = "STOPPED" ]; then
+    if MSYS_NO_PATHCONV=1 docker exec amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
+      c_awg="present (/etc/amneziawg/awg0.conf)"
+    else
+      c_awg="missing (/etc/amneziawg/awg0.conf)"
+    fi
   else
-    c_awg="missing (/etc/amneziawg/awg0.conf)"
+    c_awg="n/a (container not present)"
   fi
   printf "  %-18s : %s, config: %s\n" "AmneziaWG" "$s_awg" "$c_awg"
 
   # Skywire-AmneziaWG (access layer + visor)
   local s_sawg c_sawg
   s_sawg=$(service_status "skywire-amneziawg")
-  if MSYS_NO_PATHCONV=1 docker exec skywire-amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
-    c_sawg="present (/etc/amneziawg/awg0.conf)"
+  if [ "$s_sawg" = "RUNNING" ] || [ "$s_sawg" = "STOPPED" ]; then
+    if MSYS_NO_PATHCONV=1 docker exec skywire-amneziawg test -f /etc/amneziawg/awg0.conf >/dev/null 2>&1; then
+      c_sawg="present (/etc/amneziawg/awg0.conf)"
+    else
+      c_sawg="missing (/etc/amneziawg/awg0.conf)"
+    fi
   else
-    c_sawg="missing (/etc/amneziawg/awg0.conf)"
+    c_sawg="n/a (container not present)"
   fi
   printf "  %-18s : %s, config: %s\n" "Skywire-AmneziaWG" "$s_sawg" "$c_sawg"
 
@@ -1178,6 +1198,7 @@ print_info() {
   echo -e "$box_mid"
   printf "%b│ %b%-15s%b %s%b\n" "$panel_bg" "$muted" "Reality" "$accent" "$DNS_MODE → $DNS_DESC" "$reset"
   printf "%b│ %b%-15s%b %s%b\n" "$panel_bg" "$muted" "Profile" "$primary" "$(profile_label "$PROFILE")" "$reset"
+  printf "%b│ %b%-15s%b %s%b\n" "$panel_bg" "$muted" "Stack" "$panel_fg" "AuxPoW core, MCP suites, overlays" "$reset"
   printf "%b│ %b%-15s%b %s%b\n" "$panel_bg" "$muted" "Docker User" "$panel_fg" "$DOCKER_USER" "$reset"
   echo -e "$box_bottom"
 }

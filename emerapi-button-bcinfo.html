@@ -87,6 +87,20 @@
         const btnOpenIdHtml = document.getElementById('btnOpenIdHtml');
         const btnDownloadIdHtml = document.getElementById('btnDownloadIdHtml');
         let lastIdHtml = '';
+        let copyResetTimer = null;
+
+        function markCopyButtonAsCopied() {
+            if (!btnCopyResult) return;
+            const originalLabel = btnCopyResult.dataset.originalLabel || 'Copy';
+            btnCopyResult.dataset.originalLabel = originalLabel;
+            btnCopyResult.textContent = 'Copied';
+            if (copyResetTimer) {
+                clearTimeout(copyResetTimer);
+            }
+            copyResetTimer = setTimeout(() => {
+                btnCopyResult.textContent = originalLabel;
+            }, 1500);
+        }
 
         function buildNameShowQuery(name) {
             // callwalletfunction(method: "name_show", data: "{\"name\":\"<name>\"}")
@@ -220,6 +234,7 @@
                 try {
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         await navigator.clipboard.writeText(text);
+                        markCopyButtonAsCopied();
                         return;
                     }
                 } catch (e) {
@@ -234,6 +249,7 @@
                 ta.select();
                 try { document.execCommand('copy'); } catch (e) {}
                 document.body.removeChild(ta);
+                markCopyButtonAsCopied();
             });
         }
     </script>
