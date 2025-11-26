@@ -205,9 +205,9 @@ cleanup_dns_reverse_proxy() {
 is_port53_busy() {
   local hits=""
   if command -v ss >/dev/null 2>&1; then
-    hits=$(ss -tulnp 2>/dev/null | grep -E ":${DNS_PROXY_HOST_PORT}$")
+    hits=$(ss -tulnp 2>/dev/null | awk '{print $5}' | grep -E ":${DNS_PROXY_HOST_PORT}$")
   elif command -v netstat >/dev/null 2>&1; then
-    hits=$(netstat -an 2>/dev/null | grep -E ":${DNS_PROXY_HOST_PORT}$")
+    hits=$(netstat -tuln 2>/dev/null | awk '{print $4}' | grep -E ":${DNS_PROXY_HOST_PORT}$")
   fi
 
   if [ -n "$hits" ]; then
@@ -398,7 +398,37 @@ stack_status() {
 
 logs_stack() {
   require_docker || return 1
-  compose logs -f
+  while true; do
+    echo
+    echo -e "${green}Tail logs:${reset}"
+    echo "  1) Global stack logs (all services)"
+    echo "  2) Emercoin Core"
+    echo "  3) Privateness"
+    echo "  4) DNS reverse proxy"
+    echo "  5) pyuheprng-privatenesstools"
+    echo "  6) Yggdrasil"
+    echo "  7) I2P-Yggdrasil"
+    echo "  8) Skywire"
+    echo "  9) AmneziaWG"
+    echo " 10) Skywire-AmneziaWG"
+    echo "  0) Back"
+    echo
+    read -rp "Select an option: " l_choice
+    case "$l_choice" in
+      1) compose logs -f ;;
+      2) compose logs -f emercoin-core ;;
+      3) compose logs -f privateness ;;
+      4) compose logs -f dns-reverse-proxy ;;
+      5) compose logs -f pyuheprng-privatenesstools ;;
+      6) compose logs -f yggdrasil ;;
+      7) compose logs -f i2p-yggdrasil ;;
+      8) compose logs -f skywire ;;
+      9) compose logs -f amneziawg ;;
+      10) compose logs -f skywire-amneziawg ;;
+      0) return 0 ;;
+      *) echo "Invalid option." ;;
+    esac
+  done
 }
 
 remove_everything_local() {

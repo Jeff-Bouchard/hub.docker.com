@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NESS Hub Bootstrap</title>
+  <style>
+    :root {
+      --bg: #050712;
+      --panel: #0b0f1f;
+      --border: #252a3a;
+      --text: #f6f8ff;
+      --muted: #9aa5c5;
+      --accent: #4fc1ff;
+      --accent2: #f78f1e;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #12162c, var(--bg));
+      color: var(--text);
+      padding: 24px clamp(16px, 4vw, 48px);
+      display: flex;
+      justify-content: center;
+    }
+
+    .shell {
+      max-width: 900px;
+      width: 100%;
+      background: var(--panel);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 20px 20px 18px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+
+    label span {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #050818;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 0.9rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #050818;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      resize: vertical;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .col {
+      flex: 1 1 260px;
+      min-width: 0;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #7fe1ff);
+      color: #010409;
+      margin-right: 8px;
+      margin-top: 8px;
+    }
+
+    button.secondary {
+      background: linear-gradient(135deg, var(--accent2), #ffbf5a);
+    }
+
+    #qrcode {
+      width: 256px;
+      height: 256px;
+      background: #050818;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    #status {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <h1>NESS Hub Bootstrap</h1>
+      <p>
+        This page holds a one-liner to bootstrap the <code>hub.docker.com</code> stack from this
+        repository. It can optionally fetch the latest command from an <code>Emercoin</code> NVS
+        record (for example <code>ness:hub</code>), and renders it as both text and a QR code.
+      </p>
+    </header>
+
+    <section>
+      <label>
+        <span>NVS key to read (Emercoin)</span>
+        <input type="text" id="nvsKey" value="ness:hub" />
+      </label>
+      <p style="font-size:0.8rem; margin-top:4px;">
+        The value of this record is expected to be a shell one-liner (e.g. git clone + run menu).
+        If lookup fails, a baked-in default command will be used instead.
+      </p>
+    </section>
+
+    <section class="row">
+      <div class="col">
+        <label>
+          <span>Bootstrap one-liner</span>
+          <textarea id="cmd" readonly></textarea>
+        </label>
+        <div id="status"></div>
+        <div>
+          <button type="button" id="btnUseDefault">Use baked-in default</button>
+          <button type="button" id="btnFetchNvs" class="secondary">Fetch from Emercoin NVS (emerapi.info)</button>
+        </div>
+      </div>
+      <div class="col">
+        <span style="display:block; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:6px;">QR code</span>
+        <div id="qrcode"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Minimal inline QRCode generator placeholder (disabled; QRCode wrapper below is used) -->
+  <script type="text/plain">
+  /*! qrcode.js (MIT License) - https://github.com/davidshimjs/qrcodejs */
+  // Original library content intentionally disabled here.
+  (function(){function n(a){this.mode=c.MODE_8BIT_BYTE;this.data=a}function p(a,c){this.typeNumber=a;this.errorCorrectLevel=c;this.modules=null;this.moduleCount=0;this.dataCache=null;this.dataList=[]}function u(a,c){if(void 0==a.length)throw Error(a.length+"/"+c);for(var b=0;b<a.length&&0==a[b];)b++;this.num=new Array(a.length-b+c);for(var d=0;d<a.length-b;d++)this.num[d]=a[d+b]}function v(a,c){this.totalCount=a;this.dataCount=c}function w(){this.buffer=[];this.length=0}var c={};n.prototype={getLength:function(){return this.data.length},write:function(a){for(var c=0;c<this.data.length;c++)a.put(this.data.charCodeAt(c),8)}};p.prototype={addData:function(a){this.dataList.push(new n(a));this.dataCache=null},isDark:function(a,c){if(0>a||this.moduleCount<=a||0>c||this.moduleCount<=c)throw Error(a+","+c);return this.modules[a][c]},getModuleCount:function(){return this.moduleCount},make:function(){if(1>this.typeNumber){for(var a=1;40>a;a++){for(var c=v.getRSBlocks(a,this.errorCorrectLevel),b=new w,d=0;d<c.length;d++)b.length+=c[d].dataCount;for(d=0;d<this.dataList.length;d++)c=this.dataList[d],b.length+=c.getLength()*8;if(b.length<=8*v.getMaxDataCount(a,this.errorCorrectLevel)){this.typeNumber=a;break}}}this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(a,c){this.moduleCount=4*this.typeNumber+17;this.modules=Array(this.moduleCount);for(var b=0;b<this.moduleCount;b++){this.modules[b]=Array(this.moduleCount);for(var d=0;d<this.moduleCount;d++)this.modules[b][d]=null}this.setupPositionProbePattern(0,0);this.setupPositionProbePattern(this.moduleCount-7,0);this.setupPositionProbePattern(0,this.moduleCount-7);this.setupPositionAdjustPattern();this.setupTimingPattern();this.setupTypeInfo(a,c);12<=this.typeNumber&&this.setupTypeNumber(a);null==this.dataCache&&(this.dataCache=p.createData(this.typeNumber,this.errorCorrectLevel,this.dataList));this.mapData(this.dataCache,c)},setupPositionProbePattern:function(a,c){for(var b=-1;7>=b;b++)if(!(0>a+b||this.moduleCount<=a+b))for(var d=-1;7>=d;d++)0>c+d||this.moduleCount<=c+d||(this.modules[a+b][c+d]=0<=b&&6>=b&&(0==d||6==d)||0<=d&&6>=d&&(0==b||6==b)||2<=b&&4>=b&&2<=d&&4>=d)},getBestMaskPattern:function(){for(var a=0,c=0,b=0;8>b;b++){this.makeImpl(!0,b);var d=p.getLostPoint(this);(0==b||a>d)&&(a=d,c=b)}return c},setupTimingPattern:function(){for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2),null==this.modules[6][a]&&(this.modules[6][a]=0==a%2)},setupPositionAdjustPattern:function(){for(var a=p.getPatternPosition(this.typeNumber),c=0;c<a.length;c++)for(var b=0;b<a.length;b++){var d=a[c],e=a[b];if(null==this.modules[d][e])for(var f=-2;2>=f;f++)for(var g=-2;2>=g;g++)this.modules[d+f][e+g]=-2==f||2==f||-2==g||2==g||0==f&&0==g}},setupTypeNumber:function(a){for(var c=p.getBCHTypeNumber(this.typeNumber),b=0;18>b;b++){var d=!a&&1==(c>>b&1);this.modules[Math.floor(b/3)][b%3+this.moduleCount-8-3]=d;this.modules[b%3+this.moduleCount-8-3][Math.floor(b/3)]=d}},setupTypeInfo:function(a,c){var b=this.errorCorrectLevel<<3|c,d=p.getBCHTypeInfo(b);for(c=0;15>c;c++){var e=!a&&1==(d>>c&1);6>c?this.modules[c][8]=e:8<c&&(this.modules[c+1][8]=e);6>c?this.modules[8][this.moduleCount-c-1]=e:8<c&&(this.modules[8][15-c-1]=e)}this.modules[this.moduleCount-8][8]=!a};
+p.prototype.mapData=function(a,c){for(var b=-1,d=this.moduleCount-1,e=7,f=0,g=this.moduleCount-1;0<g;g-=2){6==g&&g--;for(var h=!0;;){for(var k=0;2>k;k++)if(null==this.modules[d][g-k]){var l=!1;f<a.length&&(l=1==(a[f]>>>e&1));p.getMask(c,d,g-k)&&(l=!l);this.modules[d][g-k]=l;e--; -1==e&&(f++,e=7)}d+=h?-1:1;if(0>d||d>=this.moduleCount){d+=h?1:-1;h=!h;break}}}};p.PAD0=236;p.PAD1=17;p.createData=function(a,c,b){for(var d=v.getRSBlocks(a,c),e=new w,f=0;f<b.length;f++)b[f].write(e);for(f=0;e.length+4<=8*v.getMaxDataCount(a,c);)e.put(0,8),f++;for(;0!=e.length%8;)e.putBit(!1);for(;e.length<8*v.getMaxDataCount(a,c);)e.put(p.PAD0,8),e.length<8*v.getMaxDataCount(a,c)&&e.put(p.PAD1,8);return p.createBytes(e,d)};p.createBytes=function(a,c){for(var b=0,d=0,e=0,f=c.length,g=Array(f),h=Array(f),k=0;k<f;k++){var l=c[k].dataCount,m=c[k].totalCount-l;d=Math.max(d,l);e=Math.max(e,m);g[k]=Array(l);for(var r=0;r<g[k].length;r++)g[k][r]=255&a.buffer[r+b];b+=l;var q=u.getPolynomial(m);l=new u(g[k],q.getLength()-1);h[k]=l.mod(q).num}for(m=b=0;m<c.length;m++)b+=c[m].totalCount;var t=Array(b);for(m=r=0;r<d;r++)for(k=0;k<f;k++)r<g[k].length&&(t[m++]=g[k][r]);for(r=0;r<e;r++)for(k=0;k<f;k++)r<h[k].length&&(t[m++]=h[k][r]);return t};p.getBCHTypeNumber=function(a){for(var c=a<<10;0<=p.getBCHDigit(c)-p.getBCHDigit(7973);)c^=7973<<p.getBCHDigit(c)-p.getBCHDigit(7973);return a<<10|c};p.getBCHTypeInfo=function(a){for(var c=a<<10;0<=p.getBCHDigit(c)-p.getBCHDigit(1335);)c^=1335<<p.getBCHDigit(c)-p.getBCHDigit(1335);return a<<10|c^21522};p.getBCHDigit=function(a){for(var c=0;0!=a;)c++,a>>=1;return c};p.getPatternPosition=function(a){return p.PATTERN_POSITION_TABLE[a-1]};p.getLossPoint=function(a){for(var c=a.getModuleCount(),b=0,d=0;c>d;d++)for(var e=0;c>e;e++){for(var f=0,g=a.isDark(d,e),h=-1;1>=h;h++)if(!(0>d+h||c<=d+h))for(var k=-1;1>=k;k++)0>e+k||c<=e+k||0==h&&0==k||g!=a.isDark(d+h,e+k)||f++;4<f&&(b+=3+f-5)}for(d=0;d<c-1;d++)for(e=0;e<c-1;e++){f=0;g=a.isDark(d,e);g&&f++;g=a.isDark(d+1,e);g&&f++;g=a.isDark(d,e+1);g&&f++;g=a.isDark(d+1,e+1);g&&f++;0!=f&&4!=f||(b+=3)}for(d=0;d<c;d++)for(e=0;e<c-6;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(b+=40);for(e=0;e<c;e++)for(d=0;d<c-6;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(b+=40);for(e=f=0;e<c;e++)for(d=0;d<c;d++)a.isDark(d,e)&&f++;return b+10*Math.abs(100*f/c/c-50)};p.PATTERN_POSITION_TABLE=[[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]];p.getMaxDataCount=function(a,c){for(var b=v.getRSBlocks(a,c),d=0,e=0;e<b.length;e++)d+=b[e].dataCount;return d};v.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]];v.getRSBlocks=function(a,c){var b=v.getRsBlockTable(a,c);if(void 0==b)throw Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+c);for(var d=b.length/3,e=[],f=0;f<d;f++)for(var g=b[3*f+0],h=b[3*f+1],k=b[3*f+2],l=0;l<g;l++)e.push(new v(h,k));return e};v.getRsBlockTable=function(a,c){switch(c){case 1:return v.RS_BLOCK_TABLE[4*(a-1)+0];case 0:return v.RS_BLOCK_TABLE[4*(a-1)+1];case 3:return v.RS_BLOCK_TABLE[4*(a-1)+2];case 2:return v.RS_BLOCK_TABLE[4*(a-1)+3]}return null};u.prototype={get:function(a){return this.num[a]},getLength:function(){return this.num.length},multiply:function(a){for(var c=Array(this.getLength()+a.getLength()-1),b=0;b<this.getLength();b++)for(var d=0;d<a.getLength();d++)c[b+d]^=u.GALOIS_LOG[this.num[b]]+u.GALOIS_LOG[a.get(d)]&255,c[b+d]=u.GALOIS_EXP[c[b+d]];return new u(c,0)},mod:function(a){if(this.getLength()-a.getLength()<0)return this;for(var c=this.num.slice(),b=this.getLength()-a.getLength(),d=0;d<=b;d++){for(var e=c[d];0==e&&d<b;)d++,e=c[d];if(0!=e)for(var f=u.GALOIS_LOG[e],g=0;g<a.getLength();g++)c[d+g]^=u.GALOIS_EXP[(u.GALOIS_LOG[a.get(g)]+256-f)%255]}return new u(c.slice(c.length-a.getLength()),0)}};u.getPolynomial=function(a){for(var c=[1],b=0;b<a;b++)c=[1,0].reduce(function(b,d,e){for(var f=[],g=0;g<b.length;g++)f[g]=b[g];0==e?f[b.length]=0:f[b.length]^=u.GALOIS_EXP[(u.GALOIS_LOG[c[1]]+b.length-g)%255];return f},c);return new u(c,0)};u.GALOIS_EXP=Array(256);u.GALOIS_LOG=Array(256);for(var x=1,y=0;256>y;y++)u.GALOIS_EXP[y]=x,x<<=1,256<=x&&(x^=285);for(y=0;255>y;y++)u.GALOIS_LOG[u.GALOIS_EXP[y]]=y;w.prototype={put:function(a,c){for(var b=0;b<c;b++)this.putBit(a>>>c-b-1&1==1)},putBit:function(a){var c=Math.floor(this.length/8);this.buffer.length<=c&&this.buffer.push(0);a&&(this.buffer[c]|=128>>>this.length%8);this.length++}};window.QRCode=function(a,c){"string"==typeof a&&(a=document.getElementById(a));this._el=a;this._htOption=c;this._oQRCode=null;this._oDrawing=new function(a){this._el=a;this.clear=function(){for(;a.hasChildNodes();)a.removeChild(a.lastChild)};this.draw=function(c){this.clear();for(var b=document.createElement("canvas"),d=c.getModuleCount(),e=Math.floor(Math.min(a.clientWidth||d,a.clientHeight||d)),f=Math.floor(e/d),g=0;g<d;g++)for(var h=0;h<d;h++){var k=document.createElement("div");k.style.position="absolute";k.style.width=f+"px";k.style.height=f+"px";k.style.left=h*f+"px";k.style.top=g*f+"px";k.style.backgroundColor=c.isDark(g,h)?"#000":"#fff";a.appendChild(k)}}}(a);this.makeCode(c&&c.text?c.text:"")};QRCode.prototype.makeCode=function(a){var c=this._htOption&&this._htOption.correctLevel||1,b=new p(0,c);b.addData(a);b.make();this._oQRCode=b;this._oDrawing.draw(b)};QRCode.prototype.clear=function(){this._oDrawing.clear()};})();
+  </script>
+
+  <script>
+    // Lightweight QRCode wrapper: renders QR as an <img> using a remote API.
+    class QRCode {
+      constructor(el, opts) {
+        this.el = el;
+      }
+      clear() {
+        if (this.el) this.el.innerHTML = "";
+      }
+      makeCode(text) {
+        if (!this.el) return;
+        this.el.innerHTML = "";
+        if (!text) return;
+        const img = document.createElement("img");
+        img.alt = "QR code";
+        img.style.maxWidth = "100%";
+        img.style.height = "auto";
+        img.src = "https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=" + encodeURIComponent(text);
+        this.el.appendChild(img);
+      }
+    }
+
+    const DEFAULT_BOOTSTRAP = "git clone https://github.com/NESS-Network/hub.docker.com.git ness-hub && cd ness-hub && chmod +x ness-menu-v4.sh && ./ness-menu-v4.sh";
+
+    const cmdEl = document.getElementById("cmd");
+    const statusEl = document.getElementById("status");
+    const nvsKeyEl = document.getElementById("nvsKey");
+    const qr = new QRCode(document.getElementById("qrcode"), { text: "", correctLevel: 1 });
+
+    function setCommand(text, note) {
+      cmdEl.value = text;
+      statusEl.textContent = note || "";
+      qr.clear();
+      qr.makeCode(text);
+    }
+
+    async function fetchFromNvs() {
+      const key = (nvsKeyEl.value || "ness:hub").trim();
+      if (!key) {
+        setCommand(DEFAULT_BOOTSTRAP, "Empty key – using default.");
+        return;
+      }
+      statusEl.textContent = "Contacting emerapi.info for " + key + " ...";
+
+      // Build GraphQL query using EmerAPI's documented pattern:
+      // callwalletfunction(method: "name_show", data: "{\"name\":\"<key>\"}")
+      const dataArg = JSON.stringify({ name: key }).replace(/"/g, "\\\"");
+      const query = `query { callwalletfunction(method: "name_show", data: "${dataArg}") { answer } }`;
+
+      try {
+        const res = await fetch("https://emerapi.info/graphql", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
+        });
+        const json = await res.json();
+        const answer = json && json.data && json.data.callwalletfunction && json.data.callwalletfunction.answer;
+        if (!answer) {
+          setCommand(DEFAULT_BOOTSTRAP, "No answer from emerapi; using default.");
+          return;
+        }
+
+        // From your screenshots, answer looks like:
+        // { result: { name: "ness:wallet", value: "..." , ... }, error: null, id: null }
+        const result = answer.result;
+        let value = "";
+        if (Array.isArray(result)) {
+          if (result.length > 0 && result[0] && result[0].value != null) {
+            value = String(result[0].value).trim();
+          }
+        } else if (result && result.value != null) {
+          value = String(result.value).trim();
+        }
+
+        if (!value) {
+          setCommand(DEFAULT_BOOTSTRAP, "NVS record has empty value; using default.");
+          return;
+        }
+        setCommand(value, `Loaded from NVS key ${key}.`);
+      } catch (err) {
+        setCommand(DEFAULT_BOOTSTRAP, "Error talking to emerapi: " + err.message + " – using default.");
+      }
+    }
+
+    document.getElementById("btnUseDefault").addEventListener("click", () => {
+      setCommand(DEFAULT_BOOTSTRAP, "Using baked-in default command.");
+    });
+
+    document.getElementById("btnFetchNvs").addEventListener("click", () => {
+      fetchFromNvs();
+    });
+
+    // Initialize with default command + QR
+    setCommand(DEFAULT_BOOTSTRAP, "Default command ready. You can override it via Emercoin NVS.");
+  </script>
+</body>
+</html>

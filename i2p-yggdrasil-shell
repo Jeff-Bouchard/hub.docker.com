@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Convenience wrapper to open an interactive shell inside the i2p-yggdrasil container.
+# This lets you inspect /etc/yggdrasil.conf, /etc/i2pd, logs, etc.
+# Usage:
+#   ./i2p-yggdrasil-shell
+
+MSYS_NO_PATHCONV=1 docker exec -it i2p-yggdrasil bash "$@"

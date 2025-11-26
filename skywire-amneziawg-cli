@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Wrapper to run skywire-cli inside the skywire-amneziawg container.
+# Examples:
+#   ./skywire-amneziawg-cli visor status
+#   ./skywire-amneziawg-cli visor apps
+
+MSYS_NO_PATHCONV=1 docker exec -it skywire-amneziawg skywire-cli "$@"

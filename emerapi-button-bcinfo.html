@@ -2,41 +2,160 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GraphQL Query Result</title>
+    <title>EmerAPI NVS One-Liners</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #050712;
+            color: #f6f8ff;
+            margin: 0;
+            padding: 24px;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 1.3rem;
+        }
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 14px;
+            margin: 4px 6px 10px 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
         }
         #result {
             white-space: pre-wrap;
+            background: #050818;
+            border-radius: 10px;
+            border: 1px solid #252a3a;
+            padding: 10px;
+            min-height: 60px;
+            font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
-    <h1>GraphQL Query Result</h1>
-    <button id="fetchButton">getblockchaininfo</button>
+    <h1>EmerAPI NVS One-Liners</h1>
+    <p>Select a predefined NVS record. The page will query <code>emerapi.info</code> and display the
+       one-liner stored in its <code>value</code> field.</p>
+
+    <!-- Benji buttons: curated NVS shortcuts wired to EmerAPI -->
+    <div>
+        <button id="btnWallet" title="Benji button · local wallet">One-liner: 20 seconds local wallet in browser (ness:wallet)</button>
+        <button id="btnHub" title="Benji button · containerized hub">One-liner: Setup Containerized Infrastructure (ness:hub)</button>
+        <button id="btnId" title="Benji button · ultra-high entropy keys">One-liner: Ultra-high entropy key-pairs (ness:id)</button>
+        <button id="btnOpenIdHtml" disabled>Open ness:id as HTML (after loading)</button>
+    </div>
+
     <div id="result"></div>
 
     <script>
-        document.getElementById('fetchButton').addEventListener('click', function() {
-            fetch('https://emerapi.info/graphql', {  
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: 'query { callwalletfunction (method: "getblockchaininfo") { answer } }',
-                }),
-            })
-            .then(res => res.json())
-            .then(res => {
-                document.getElementById('result').textContent = JSON.stringify(res.data, null, 2);
-                if(res.errors) {
-                    document.getElementById('result').textContent += '\n\nErrors:\n' + JSON.stringify(res.errors, null, 2);
+        const resultEl = document.getElementById('result');
+        const btnOpenIdHtml = document.getElementById('btnOpenIdHtml');
+        let lastIdHtml = '';
+
+        function buildNameShowQuery(name) {
+            // callwalletfunction(method: "name_show", data: "{\"name\":\"<name>\"}")
+            const dataArg = JSON.stringify({ name }).replace(/"/g, "\\\"");
+            return `query { callwalletfunction(method: "name_show", data: "${dataArg}") { answer } }`;
+        }
+
+        async function loadOneLiner(nvsName, label) {
+            resultEl.textContent = `Loading ${label} from ${nvsName}...\n`;
+            const query = buildNameShowQuery(nvsName);
+            try {
+                const res = await fetch('https://emerapi.info/graphql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query }),
+                });
+                const json = await res.json();
+
+                let answer = json && json.data && json.data.callwalletfunction && json.data.callwalletfunction.answer;
+                if (!answer) {
+                    resultEl.textContent += 'No answer from emerapi.\n';
+                    return;
                 }
-            })
-            .catch(err => {
-                document.getElementById('result').textContent = 'Error:\n' + err;
-            });
+
+                // 'answer' may be either a JSON string or an already-parsed object.
+                let parsed;
+                if (typeof answer === 'string') {
+                    try {
+                        parsed = JSON.parse(answer);
+                    } catch (e) {
+                        // Fall back to raw string if it is not JSON
+                        const txt = answer.trim();
+                        if (txt) {
+                            resultEl.textContent = `# ${label} (from ${nvsName})\n${txt}\n`;
+                            if (nvsName === 'ness:id') {
+                                lastIdHtml = txt;
+                                if (btnOpenIdHtml) btnOpenIdHtml.disabled = false;
+                            }
+                            return;
+                        }
+                        resultEl.textContent += 'Could not decode answer JSON.\n';
+                        return;
+                    }
+                } else {
+                    parsed = answer;
+                }
+
+                // Expected shape from emerapi (per your screenshots):
+                // parsed = { result: { name, value, ... }, error, id }
+                // but be tolerant if 'result' is missing and value sits at top level.
+                let result = parsed && parsed.result != null ? parsed.result : parsed;
+                let value = '';
+                if (Array.isArray(result)) {
+                    if (result.length > 0 && result[0] && result[0].value != null) {
+                        value = String(result[0].value).trim();
+                    }
+                } else if (result && result.value != null) {
+                    value = String(result.value).trim();
+                }
+
+                if (!value) {
+                    resultEl.textContent += 'NVS record has empty value.\n';
+                    return;
+                }
+
+                resultEl.textContent = `# ${label} (from ${nvsName})\n${value}\n`;
+
+                if (nvsName === 'ness:id') {
+                    lastIdHtml = value;
+                    if (btnOpenIdHtml) btnOpenIdHtml.disabled = false;
+                } else {
+                    lastIdHtml = '';
+                    if (btnOpenIdHtml) btnOpenIdHtml.disabled = true;
+                }
+            } catch (err) {
+                resultEl.textContent += `Error: ${err.message || err}\n`;
+            }
+        }
+
+        document.getElementById('btnWallet').addEventListener('click', () => {
+            loadOneLiner('ness:wallet', 'One-liner: 20 seconds local wallet in browser');
         });
+
+        document.getElementById('btnHub').addEventListener('click', () => {
+            loadOneLiner('ness:hub', 'One-liner: Setup Containerized Infrastructure');
+        });
+
+        document.getElementById('btnId').addEventListener('click', () => {
+            loadOneLiner('ness:id', 'One-liner: Ultra-high entropy key-pairs');
+        });
+
+        if (btnOpenIdHtml) {
+            btnOpenIdHtml.addEventListener('click', () => {
+                if (!lastIdHtml) return;
+                const blob = new Blob([lastIdHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank', 'noopener,noreferrer');
+                // Revoke after a while to avoid leaks
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            });
+        }
     </script>
 </body>
 </html>
