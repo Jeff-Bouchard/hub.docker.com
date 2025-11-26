@@ -441,13 +441,13 @@ examples_nvs_dns() {
   echo -e "${green}Emercoin NVS / DNS examples:${reset}"
   cat <<'EOF'
 # Show canonical NVS entry (replace "emercoin-cli" with "emc" if needed)
-emercoin-cli name_show ness:therulesoftheinternet
+emercoin-cli name_show ness:therulesoftheinternet | python ./emercoin-value.py
 
 # Show wallet NVS entry
-emercoin-cli name_show ness:wallet
+emercoin-cli name_show ness:wallet | python ./emercoin-value.py
 
 # Show DNS NVS entry used by Ness
-emercoin-cli name_show dns:private.ness
+emercoin-cli name_show dns:private.ness | python ./emercoin-value.py
 
 # Resolve DNS via local dns-reverse-proxy
 dig @127.0.0.1 private.ness
@@ -622,7 +622,7 @@ health_check() {
   echo "== EmerNVS & DNS resolution (host) =="
   if [ -n "$EMERCOIN_CLI" ]; then
     echo "-- NVS dns:private.ness:"
-    if "$EMERCOIN_CLI" name_show dns:private.ness 2>/dev/null; then
+    if "$EMERCOIN_CLI" name_show dns:private.ness 2>/dev/null | python "$SCRIPT_DIR/emercoin-value.py"; then
       echo -e " ${green}${check_ok_symbol}${reset} NVS dns:private.ness reachable"
     else
       echo -e " ${red}${check_fail_symbol}${reset} NVS dns:private.ness reachable"
@@ -640,7 +640,7 @@ health_check() {
 
     echo
     echo "-- NVS dns:vpn.sky:"
-    if "$EMERCOIN_CLI" name_show dns:vpn.sky 2>/dev/null; then
+    if "$EMERCOIN_CLI" name_show dns:vpn.sky 2>/dev/null | python "$SCRIPT_DIR/emercoin-value.py"; then
       echo -e " ${green}${check_ok_symbol}${reset} NVS dns:vpn.sky reachable"
     else
       echo -e " ${red}${check_fail_symbol}${reset} NVS dns:vpn.sky reachable"
