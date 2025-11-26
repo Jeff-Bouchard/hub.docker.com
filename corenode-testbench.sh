@@ -65,13 +65,13 @@ echo "
 ###########################################################
 "
 # sleep 5
-emc name_show dns:private.ness
+emc name_show dns:private.ness | python ./emercoin-value.py
 # sleep 10
 
 ping private.ness -c 2
 # sleep 3
 
-emc name_show dns:vpn.sky
+emc name_show dns:vpn.sky | python ./emercoin-value.py
 # sleep 3
 
 ping vpn.sky -c 2

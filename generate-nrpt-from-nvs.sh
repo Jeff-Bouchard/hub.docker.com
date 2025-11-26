@@ -23,9 +23,14 @@ DNS_NVS_KEY="${DNS_NVS_KEY:-ness:dns-reverse-proxy-config}"
 DNS_SERVER="${DNS_SERVER:-ns74.com}"
 POLICY_GUID="${POLICY_GUID:-{4bb812c0-e47a-48a8-aafc-f9c821cb1179}}"
 
-# Fetch NVS record from Emercoin
-RESPONSE="$($EMERCOIN_CLI name_show "$DNS_NVS_KEY")"
-VALUE=$(printf '%s' "$RESPONSE" | sed -n 's/.*"value"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p') || true
+# Fetch NVS record value from Emercoin (filtered via Python helper)
+if [ -x "./emercoin-value.py" ]; then
+  VALUE="$($EMERCOIN_CLI name_show "$DNS_NVS_KEY" | python ./emercoin-value.py)"
+else
+  # Fallback to sed if helper missing
+  RESPONSE="$($EMERCOIN_CLI name_show "$DNS_NVS_KEY")"
+  VALUE=$(printf '%s' "$RESPONSE" | sed -n 's/.*"value"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p') || true
+fi
 
 if [ -z "$VALUE" ]; then
   echo "ERROR: Could not extract 'value' from name_show response for $DNS_NVS_KEY" >&2

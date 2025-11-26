@@ -5,7 +5,7 @@ version: '3.8'
 
 services:
   emercoin-core:
-    image: ness-network/emercoin-core:latest
+    image: nessnetwork/emercoin-core:latest
     container_name: emercoin-core
     ports:
       - "6661:6661"
@@ -20,7 +20,7 @@ services:
       - "com.privateness.stack=minimal"
 
   yggdrasil:
-    image: ness-network/yggdrasil:latest
+    image: nessnetwork/yggdrasil:latest
     container_name: yggdrasil
     ports:
       - "9001:9001"
@@ -35,7 +35,7 @@ services:
       - emercoin-core
 
   privateness:
-    image: ness-network/privateness:latest
+    image: nessnetwork/privateness:latest
     container_name: privateness
     ports:
       - "6006:6006"

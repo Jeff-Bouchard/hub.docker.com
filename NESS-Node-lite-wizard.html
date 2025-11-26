@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrivateNess Lite Wizard</title>
+  <style>
+    body { background: #101c2a; color: #e0e0e0; font-family: 'Fira Sans', Arial, sans-serif; margin: 0; }
+    .container { max-width: 700px; margin: 40px auto; background: #171f2e; border-radius: 12px; box-shadow: 0 0 12px #0008; padding: 2em 2.5em; }
+    h1 { color: #6ec6ff; }
+    label { display: block; margin-top: 1.3em; font-weight: bold; }
+    input, textarea { width: 100%; margin-top: 0.3em; padding: 0.5em; font-size: 1em; border-radius: 6px; border: 1px solid #28334a; background: #101c2a; color: #e0e0e0; }
+    button { margin-top: 1.5em; padding: 0.7em 2em; border: none; border-radius: 6px; background: #6ec6ff; color: #101c2a; font-weight: bold; cursor: pointer; font-size: 1.1em; }
+    button:active { background: #2196f3; }
+    .script-section { margin-top: 2em; }
+    .footer { margin-top: 2em; text-align: center; color: #6ec6ff; font-size: 1em; }
+    @media (max-width: 800px) { .container { padding: 1em 0.5em; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PrivateNess Lite Node Wizard</h1>
+    <form id="wizard-form">
+      <label>Master User Name
+        <input type="text" id="masterUser" value="master01" required />
+      </label>
+      <label>Master Key Entropy
+        <input type="text" id="masterEntropy" value="100" required />
+      </label>
+      <label>Node URL
+        <input type="text" id="nodeUrl" value="http://batman1.private.ness" required />
+      </label>
+      <label>Node Tariff (NCH/hour)
+        <input type="text" id="nodeTariff" value="1000" required />
+      </label>
+      <label>Node Services
+        <input type="text" id="nodeServices" value="prng,files" required />
+      </label>
+      <label>Node Network
+        <input type="text" id="nodeNetwork" value="inet" required />
+        <span style="font-size:0.95em; color:#6ec6ff;">Examples: comma-separated: inet (clearnet),skywire,yggdrasil,i2p,tor</span>
+      </label>
+      <label>Node Entropy
+        <input type="text" id="nodeEntropy" value="100" required />
+      </label>
+      <button type="submit">Generate Script</button>
+    </form>
+    <div class="script-section" style="display:none;">
+      <h3>Generated Script</h3>
+      <textarea id="script-output" rows="14" readonly style="font-family:monospace; font-size:1em;"></textarea>
+      <button id="download-btn">Download Script</button>
+    </div>
+    <div class="footer">Privateness.Network &copy; 2025</div>
+    <div style="margin-top:2em; color:#aaa; font-size:0.95em;">
+      <strong>Want a web terminal?</strong> <br>
+      <span>If you want to run scripts in the browser, start the backend (Flask) and use the full wizard UI.</span>
+    </div>
+  </div>
+  <script>
+    function wrapTextBash(str, width = 78) {
+      return str.split('\n').map(line => {
+        if (line.length <= width) return line;
+        let out = '', cur = '';
+        const tokens = line.match(/\$?\w+:[^ ]+|<[^>]+>|\S+|\s+/g) || [line];
+        for (const token of tokens) {
+          if (cur.length + token.length > width) {
+            out += cur.trimEnd() + '\n';
+            cur = '';
+          }
+          cur += token;
+        }
+        return out + cur.trimEnd();
+      }).join('\n');
+    }
+    function generateScript(values) {
+      const homeKeysDir = '$HOME/.privateness-keys';
+      const usersKey = `${homeKeysDir}/users.key.json`;
+      const nodeKey = `${homeKeysDir}/node.key.json`;
+      const message = `Operation Successful\nRegister these 2 EmerNVS records and add an EmerDNS dns: record for your node URL (${values.nodeUrl}):\n$USER_NVS:$USER_WORM\n$NODE_NVS:$NODE_WORM\nGet coins: https://faucet.ness.cx\nRegister your records: https://nvs.ness.cx`;
+      return `#!/bin/bash\n\n# Ensure folder structure exists\nmkdir -p ~/go/src/github.com/ness-network/\ncd ~/go/src/github.com/ness-network/\n\n# 0. Ensure Python 3, pip3, and venv are installed\ncommand -v python3 >/dev/null 2>&1 || { echo >&2 'Python3 is not installed. Aborting.'; exit 1; }\ncommand -v pip3 >/dev/null 2>&1 || { echo >&2 'pip3 is not installed. Aborting.'; exit 1; }\npython3 -m venv venv && . venv/bin/activate\n\n# 1. Upgrade pip and install wheel\npip install --upgrade pip wheel\n\n# 2. Install all Python dependencies\npip install requests prettytable validators lxml pycryptodome pynacl random_word humanize charset-normalizer idna urllib3 certifi wcwidth cffi autopep8 pytest pyyaml pycodestyle iniconfig packaging pluggy pycparser\n\n# 3. Clone PrivatenessTools\ngit clone https://github.com/NESS-Network/PrivatenessTools || true\ncd PrivatenessTools\n\n# 4. Install requirements.txt (redundant but safe)\npip install -r requirements.txt\n\n# 5. Generate master user key\n./keygen user ${values.masterUser} ${values.masterEntropy}\n\nUSER_NVS=$(./key nvs ${usersKey})\nUSER_WORM=$(./key worm ${usersKey})\nNODE_NVS=$(./key nvs ${nodeKey})\nNODE_WORM=$(./key worm ${nodeKey})\n\ncat <<EOF\n${wrapTextBash(message, 72)}\nEOF\n`;
+    }
+    document.getElementById('wizard-form').onsubmit = function(e) {
+      e.preventDefault();
+      const values = {
+        masterUser: document.getElementById('masterUser').value,
+        masterEntropy: document.getElementById('masterEntropy').value,
+        nodeUrl: document.getElementById('nodeUrl').value,
+        nodeTariff: document.getElementById('nodeTariff').value,
+        nodeServices: document.getElementById('nodeServices').value,
+        nodeNetwork: document.getElementById('nodeNetwork').value,
+        nodeEntropy: document.getElementById('nodeEntropy').value
+      };
+      const script = generateScript(values);
+      document.querySelector('.script-section').style.display = '';
+      document.getElementById('script-output').value = script;
+    };
+    document.getElementById('download-btn').onclick = function() {
+      const script = document.getElementById('script-output').value;
+      const blob = new Blob([script], { type: 'text/x-sh' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nessnode-setup.sh';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    };
+  </script>
+</body>
+</html>
