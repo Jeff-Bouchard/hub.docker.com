@@ -29,8 +29,11 @@
     .btn.secondary { background: linear-gradient(135deg, #ffb74d, #ff9800); color: #101c2a; }
     .btn.tertiary { background: linear-gradient(135deg, #ab47bc, #8e24aa); color: #f8f5ff; }
     .footer { margin-top: 2em; text-align: center; color: #6ec6ff; font-size: 0.95em; }
-    .result {
+    .result-wrapper {
       margin-top: 2em;
+      position: relative;
+    }
+    .result {
       text-align: left;
       background: #101624;
       border-radius: 8px;
@@ -43,23 +46,71 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      padding: 0.2em 0.6em;
+      font-size: 0.8em;
+      border-radius: 4px;
+      border: none;
+      background: #2b85d3;
+      color: #f5faff;
+      cursor: pointer;
+    }
+    .copy-btn:hover {
+      background: #47a0ec;
+    }
+    .copy-btn:active {
+      background: #1f6ea8;
+    }
+    .result-actions {
+      position: absolute;
+      right: 8px;
+      bottom: 6px;
+      display: flex;
+      gap: 0.4em;
+      font-size: 0.8em;
+    }
+    .action-btn {
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      border: none;
+      background: #263146;
+      color: #f5faff;
+      cursor: pointer;
+    }
+    .action-btn:hover {
+      background: #36425a;
+    }
+    .action-btn:active {
+      background: #1b2435;
+    }
     @media (max-width: 800px) { .container { padding: 1.5em 1em; } }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Benji Control</h1>
+    <h1>Privateness Persona</h1>
     <p class="subtitle">Fetch EmerNVS records via emerapi.info GraphQL: ness:wallet, ness:hub and ness:id.</p>
     <div class="buttons">
-      <button id="benji-wallet" class="btn">Benji &mdash; Wallet (ness:wallet)</button>
-      <button id="benji-hub" class="btn secondary">Benji &mdash; Hub (ness:hub)</button>
-      <button id="benji-id" class="btn tertiary">Benji &mdash; ID (ness:id)</button>
+      <button id="benji-wallet" class="btn">Quickstart &mdash; Wallet (ness:wallet)</button>
+      <button id="benji-hub" class="btn secondary">Containers &mdash; Hub (ness:hub)</button>
+      <button id="benji-id" class="btn tertiary">Bedrock Identity Creation Wizard HTML code&mdash; ID (ness:id)</button>
     </div>
-    <div id="benji-result" class="result" style="display:none;"></div>
+    <div id="benji-result-wrapper" class="result-wrapper" style="display:none;">
+      <button id="benji-copy" class="copy-btn">COPY</button>
+      <div id="benji-result" class="result"></div>
+      <div class="result-actions">
+        <button id="benji-save" class="action-btn">save as file</button>
+        <button id="benji-open-html" class="action-btn">open as html</button>
+      </div>
+    </div>
     <div class="footer">Privateness.Network &copy; 2025</div>
   </div>
   <script>
     const API_URL = 'https://emerapi.info/graphql';
+    let currentNvsName = null;
 
     function formatQuery(name) {
       const data = JSON.stringify({ name });
@@ -78,12 +129,21 @@
         throw new Error(JSON.stringify(json.errors, null, 2));
       }
       const answer = json.data && json.data.callwalletfunction && json.data.callwalletfunction.answer;
-      if (!answer || !answer.result) {
-        return JSON.stringify(answer, null, 2);
+      console.log('Answer type:', typeof answer, answer);
+      
+      // If answer is a string, parse it first
+      let parsedAnswer = answer;
+      if (typeof answer === 'string') {
+        parsedAnswer = JSON.parse(answer);
       }
-      const result = answer.result;
-      // Prefer the EmerNVS value field for copy-paste, like the curl line
+      
+      if (!parsedAnswer || !parsedAnswer.result) {
+        return JSON.stringify(parsedAnswer, null, 2);
+      }
+      const result = parsedAnswer.result;
+      // Prefer the EmerNVS value field and parse it like emercoin-value.py
       if (typeof result.value === 'string' && result.value.trim() !== '') {
+        // The value field contains the actual command string
         return result.value.trim();
       }
       // Fallback: show full result JSON
@@ -91,9 +151,15 @@
     }
 
     function showResult(title, text) {
+      const wrapper = document.getElementById('benji-result-wrapper');
       const box = document.getElementById('benji-result');
-      box.style.display = '';
-      box.textContent = `${title}\n\n${text}`;
+      if (!box) return;
+      if (wrapper) {
+        wrapper.style.display = '';
+      }
+      // Show ONLY the command text, no title or description
+      box.textContent = text;
+      box.dataset.copyPayload = text;
     }
 
     function wireBenji(id, nvsName, label) {
@@ -105,9 +171,10 @@
         btn.textContent = `${orig} …`;
         try {
           const result = await fetchNvs(nvsName);
-          showResult(`${label} (${nvsName})`, result);
+          currentNvsName = nvsName;
+          showResult('', result);
         } catch (e) {
-          showResult(`${label} (${nvsName}) - ERROR`, String(e));
+          showResult('', String(e));
         } finally {
           btn.disabled = false;
           btn.textContent = orig;
@@ -115,9 +182,94 @@
       });
     }
 
+    function getResultPayload() {
+      const box = document.getElementById('benji-result');
+      if (!box) return '';
+      return (box.dataset && box.dataset.copyPayload) || box.textContent || '';
+    }
+
+    function setupCopy() {
+      const btn = document.getElementById('benji-copy');
+      if (!btn || !navigator.clipboard) return;
+      btn.addEventListener('click', async () => {
+        const payload = getResultPayload();
+        if (!payload) return;
+        try {
+          await navigator.clipboard.writeText(payload.trim());
+          const original = btn.textContent;
+          btn.textContent = 'COPIED';
+          setTimeout(() => {
+            btn.textContent = original;
+          }, 1200);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function setupResultActions() {
+      const saveBtn = document.getElementById('benji-save');
+      const openBtn = document.getElementById('benji-open-html');
+      if (!saveBtn && !openBtn) return;
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          const payload = getResultPayload();
+          if (!payload) return;
+          const trimmed = payload.trim();
+          const isHtml = /^\s*</.test(trimmed);
+
+          const baseRaw = currentNvsName || 'benji-output';
+          const baseName = baseRaw.replace(/:/g, '-');
+          const ua = navigator.userAgent || '';
+          const isWindows = /Windows/i.test(ua);
+          const ext = isHtml ? '.html' : (isWindows ? '.bat' : '.sh');
+          const filename = baseName + ext;
+
+          const blob = new Blob([trimmed + '\n'], { type: 'text/plain;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      }
+
+      if (openBtn) {
+        openBtn.addEventListener('click', () => {
+          const payload = getResultPayload();
+          if (!payload) return;
+          const trimmed = payload.trim();
+          const win = window.open('', '_blank');
+          if (!win) return;
+          win.document.open();
+          if (/^\s*</.test(trimmed)) {
+            win.document.write(trimmed);
+          } else {
+            win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Benji Output</title></head><body><pre>');
+            win.document.write(escapeHtml(trimmed));
+            win.document.write('</pre></body></html>');
+          }
+          win.document.close();
+        });
+      }
+    }
+
     wireBenji('benji-wallet', 'ness:wallet', 'EmerNVS Wallet');
     wireBenji('benji-hub', 'ness:hub', 'EmerNVS Hub');
     wireBenji('benji-id', 'ness:id', 'EmerNVS ID');
+    setupCopy();
+    setupResultActions();
   </script>
 </body>
 </html>
